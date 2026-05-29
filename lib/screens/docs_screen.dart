@@ -9,7 +9,7 @@ import '../widgets/document_card.dart';
 import 'editor_screen.dart';
 import 'doc_actions.dart';
 
-enum _DocFilter { all, favorites, recent }
+enum _DocFilter { all, favorites, recent, folder }
 
 enum _SortBy { updated, created, name, words }
 
@@ -25,6 +25,7 @@ class _DocsScreenState extends State<DocsScreen> {
   _SortBy _sort = _SortBy.updated;
   String _query = '';
   bool _grid = false;
+  String _activeFolder = '';
 
   List<DocumentModel> _apply(DocumentService service) {
     var docs = service.search(_query);
@@ -34,6 +35,9 @@ class _DocsScreenState extends State<DocsScreen> {
         break;
       case _DocFilter.recent:
         docs = docs.take(10).toList();
+        break;
+      case _DocFilter.folder:
+        docs = docs.where((d) => d.folder == _activeFolder).toList();
         break;
       case _DocFilter.all:
         break;
@@ -118,16 +122,18 @@ class _DocsScreenState extends State<DocsScreen> {
   }
 
   Widget _filterChips() {
-    Widget chip(String label, _DocFilter f) {
-      final active = _filter == f;
+    final service = context.watch<DocumentService>();
+
+    Widget chip(String label, bool active, VoidCallback onTap,
+        {IconData? icon}) {
       return Padding(
         padding: const EdgeInsets.only(right: 8),
         child: GestureDetector(
-          onTap: () => setState(() => _filter = f),
+          onTap: onTap,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
               color: active ? AppColors.primaryBlue : Colors.white,
               borderRadius: BorderRadius.circular(20),
@@ -136,13 +142,26 @@ class _DocsScreenState extends State<DocsScreen> {
                       ? AppColors.primaryBlue
                       : AppColors.cardBorder),
             ),
-            child: Text(
-              label,
-              style: TextStyle(
-                color: active ? Colors.white : AppColors.textSecondary,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
+            child: Row(
+              children: [
+                if (icon != null) ...[
+                  Icon(icon,
+                      size: 15,
+                      color: active
+                          ? Colors.white
+                          : AppColors.textSecondary),
+                  const SizedBox(width: 5),
+                ],
+                Text(
+                  label,
+                  style: TextStyle(
+                    color:
+                        active ? Colors.white : AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -156,9 +175,60 @@ class _DocsScreenState extends State<DocsScreen> {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          chip('All', _DocFilter.all),
-          chip('Favorites', _DocFilter.favorites),
-          chip('Recent', _DocFilter.recent),
+          chip('All', _filter == _DocFilter.all,
+              () => setState(() => _filter = _DocFilter.all)),
+          chip('Favorites', _filter == _DocFilter.favorites,
+              () => setState(() => _filter = _DocFilter.favorites),
+              icon: Icons.star_rounded),
+          chip('Recent', _filter == _DocFilter.recent,
+              () => setState(() => _filter = _DocFilter.recent),
+              icon: Icons.schedule),
+          ...service.folders.map((f) => chip(
+                f,
+                _filter == _DocFilter.folder && _activeFolder == f,
+                () => setState(() {
+                  _filter = _DocFilter.folder;
+                  _activeFolder = f;
+                }),
+                icon: Icons.folder,
+              )),
+          chip('New folder', false, _newFolderDialog,
+              icon: Icons.create_new_folder_outlined),
+        ],
+      ),
+    );
+  }
+
+  void _newFolderDialog() {
+    final controller = TextEditingController();
+    final service = context.read<DocumentService>();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text('New folder'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: 'Folder name',
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) service.addFolder(name);
+              Navigator.pop(ctx);
+            },
+            child: const Text('Create'),
+          ),
         ],
       ),
     );

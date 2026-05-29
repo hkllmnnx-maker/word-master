@@ -1,11 +1,15 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/app_theme.dart';
 import '../core/utils.dart';
 import '../services/document_service.dart';
+import '../services/export_service.dart';
 import '../services/settings_service.dart';
 import '../widgets/gradient_header.dart';
+import 'trash_screen.dart';
+import 'editor_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -104,14 +108,31 @@ class SettingsScreen extends StatelessWidget {
                   _actionTile(
                     Icons.bar_chart_rounded,
                     'Statistics',
-                    '${service.totalDocuments} docs · ${Formatters.compactNumber(service.totalWords)} words',
-                    () {},
+                    '${service.totalDocuments} docs · ${Formatters.compactNumber(service.totalWords)} words · ${Formatters.compactNumber(service.totalCharacters)} chars',
+                    () => _showStats(context, service),
+                  ),
+                  _divider(),
+                  _actionTile(
+                    Icons.delete_outline,
+                    'Trash',
+                    '${service.trashedDocuments.length} item(s)',
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const TrashScreen()),
+                    ),
+                  ),
+                  _divider(),
+                  _actionTile(
+                    Icons.file_upload_outlined,
+                    'Import text file',
+                    'Create a document from a .txt file',
+                    () => _importFile(context, service),
                   ),
                   _divider(),
                   _actionTile(
                     Icons.delete_sweep_outlined,
                     'Clear all documents',
-                    'Permanently delete everything',
+                    'Move everything to trash',
                     () => _confirmClear(context, service),
                     danger: true,
                   ),
@@ -299,7 +320,7 @@ class SettingsScreen extends StatelessWidget {
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: const Text('Clear all documents?'),
         content: const Text(
-            'This will permanently delete all your documents. This action cannot be undone.'),
+            'This will move all your documents to the trash. You can restore them later.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
@@ -309,17 +330,91 @@ class SettingsScreen extends StatelessWidget {
                 ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
             onPressed: () async {
               for (final d in List.from(service.documents)) {
-                await service.deleteDocument(d.id);
+                await service.moveToTrash(d.id);
               }
               if (ctx.mounted) Navigator.pop(ctx);
               if (context.mounted) {
-                AppSnack.show(context, 'All documents cleared');
+                AppSnack.show(context, 'Documents moved to trash');
               }
             },
-            child: const Text('Clear all'),
+            child: const Text('Move all to trash'),
           ),
         ],
       ),
     );
+  }
+
+  void _showStats(BuildContext context, DocumentService service) {
+    Widget row(String label, String value) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(label,
+                  style: const TextStyle(color: AppColors.textSecondary)),
+              Text(value,
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
+            ],
+          ),
+        );
+    final avg = service.totalDocuments == 0
+        ? 0
+        : (service.totalWords / service.totalDocuments).round();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text('Your writing stats'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            row('Total documents', '${service.totalDocuments}'),
+            row('Total words', '${service.totalWords}'),
+            row('Total characters', '${service.totalCharacters}'),
+            row('Average words/doc', '$avg'),
+            row('Favorites', '${service.favoriteDocuments.length}'),
+            row('In trash', '${service.trashedDocuments.length}'),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Close')),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _importFile(
+      BuildContext context, DocumentService service) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['txt', 'md', 'html'],
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.first;
+      final bytes = file.bytes;
+      if (bytes == null) return;
+      final content = String.fromCharCodes(bytes);
+      final title = file.name.replaceAll(RegExp(r'\.[^.]+$'), '');
+      final doc = await service.createDocument(
+        title: title.isEmpty ? 'Imported Document' : title,
+        contentJson: ExportService.plainTextToDelta(content),
+        plainText: content,
+      );
+      if (!context.mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (_) => EditorScreen(documentId: doc.id)),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        AppSnack.show(context, 'Import failed', error: true);
+      }
+    }
   }
 }

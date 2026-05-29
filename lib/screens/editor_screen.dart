@@ -11,6 +11,7 @@ import '../core/utils.dart';
 import '../services/document_service.dart';
 import '../services/settings_service.dart';
 import '../widgets/format_toolbar.dart';
+import 'doc_actions.dart';
 
 /// Full document editor with the gradient header, live info strip,
 /// custom formatting toolbar and the rich-text canvas.
@@ -40,6 +41,7 @@ class _EditorScreenState extends State<EditorScreen> {
   String _syncStatus = 'synced';
   Timer? _autosaveTimer;
   bool _dirty = false;
+  DateTime? _lastVersionAt;
 
   @override
   void initState() {
@@ -122,6 +124,15 @@ class _EditorScreenState extends State<EditorScreen> {
         plainText: plainText,
         syncStatus: 'synced',
       );
+    }
+
+    // Save a periodic version snapshot (throttled inside the service).
+    final now = DateTime.now();
+    if (_docId != null &&
+        (_lastVersionAt == null ||
+            now.difference(_lastVersionAt!).inSeconds > 45)) {
+      await service.saveVersion(_docId!, label: 'Auto-save');
+      _lastVersionAt = now;
     }
     if (mounted) {
       setState(() {
@@ -286,8 +297,8 @@ class _EditorScreenState extends State<EditorScreen> {
                     ),
                   ),
                 ),
+                _headerBtn(Icons.search, _findReplace),
                 _headerBtn(Icons.save_outlined, () => _save()),
-                _headerBtn(Icons.share_outlined, _share),
                 _headerBtn(Icons.more_vert, _showMore),
               ],
             ),
@@ -487,53 +498,335 @@ class _EditorScreenState extends State<EditorScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
       builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.textMuted.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: const Icon(Icons.font_download_outlined),
+                title: const Text('Font family'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickFontFamily();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.format_size),
+                title: const Text('Font size'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickFontSize();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.bar_chart_rounded),
+                title: const Text('Statistics'),
+                subtitle: Text('$_wordCount words'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showStats();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.search),
+                title: const Text('Find & Replace'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _findReplace();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.ios_share),
+                title: const Text('Export'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await _save(silent: true);
+                  if (!mounted) return;
+                  final service = context.read<DocumentService>();
+                  final doc = service.getById(_docId ?? '');
+                  if (doc != null) DocActions.showExportSheet(context, doc);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.share_outlined),
+                title: const Text('Quick share'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _share();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.cleaning_services_outlined),
+                title: const Text('Clear formatting'),
+                onTap: () {
+                  final sel = _controller.selection;
+                  if (!sel.isCollapsed) {
+                    _controller.formatSelection(
+                        Attribute.clone(Attribute.bold, null));
+                    _controller.formatSelection(
+                        Attribute.clone(Attribute.italic, null));
+                    _controller.formatSelection(
+                        Attribute.clone(Attribute.underline, null));
+                  }
+                  Navigator.pop(ctx);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.save_alt),
+                title: const Text('Save now'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _save();
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _pickFontFamily() {
+    const fonts = [
+      'Sans Serif',
+      'Serif',
+      'Monospace',
+      'Inter',
+      'Roboto',
+      'Georgia',
+    ];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).cardTheme.color,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 42,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.textMuted.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.text_fields),
-              title: const Text('Word count'),
-              subtitle: Text(
-                  '$_wordCount words · ${_controller.document.toPlainText().replaceAll('\n', '').length} characters'),
-              onTap: () => Navigator.pop(ctx),
-            ),
-            ListTile(
-              leading: const Icon(Icons.cleaning_services_outlined),
-              title: const Text('Clear formatting'),
-              onTap: () {
-                final sel = _controller.selection;
-                if (!sel.isCollapsed) {
-                  _controller.formatSelection(
-                      Attribute.clone(Attribute.bold, null));
-                  _controller.formatSelection(
-                      Attribute.clone(Attribute.italic, null));
-                  _controller.formatSelection(
-                      Attribute.clone(Attribute.underline, null));
-                }
-                Navigator.pop(ctx);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.save_alt),
-              title: const Text('Save now'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _save();
-              },
-            ),
+            const SizedBox(height: 14),
+            const Text('Font family',
+                style:
+                    TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+            const SizedBox(height: 8),
+            ...fonts.map((f) => ListTile(
+                  title: Text(f),
+                  onTap: () {
+                    _controller.formatSelection(
+                        f == 'Sans Serif' ? Attribute.clone(Attribute.font, null) : FontAttribute(f));
+                    Navigator.pop(ctx);
+                  },
+                )),
             const SizedBox(height: 8),
           ],
         ),
       ),
     );
+  }
+
+  void _pickFontSize() {
+    const sizes = ['10', '12', '14', '16', '18', '24', '32', '48'];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).cardTheme.color,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Font size',
+                  style:
+                      TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      _controller.formatSelection(
+                          Attribute.clone(Attribute.size, null));
+                      Navigator.pop(ctx);
+                    },
+                    child: _sizeChip('Default'),
+                  ),
+                  ...sizes.map((s) => GestureDetector(
+                        onTap: () {
+                          _controller
+                              .formatSelection(SizeAttribute(s));
+                          Navigator.pop(ctx);
+                        },
+                        child: _sizeChip(s),
+                      )),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sizeChip(String label) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.activeChipBg,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(label,
+            style: const TextStyle(
+                color: AppColors.primaryBlue, fontWeight: FontWeight.w600)),
+      );
+
+  void _showStats() {
+    final text = _controller.document.toPlainText();
+    final words = _wordCount;
+    final chars = text.replaceAll('\n', '').length;
+    final charsWithSpaces = text.length;
+    final paragraphs =
+        text.split('\n').where((l) => l.trim().isNotEmpty).length;
+    final readMin = (words / 200).ceil();
+
+    Widget row(String label, String value) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(label,
+                  style: const TextStyle(color: AppColors.textSecondary)),
+              Text(value,
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
+            ],
+          ),
+        );
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text('Document statistics'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            row('Words', '$words'),
+            row('Characters (no spaces)', '$chars'),
+            row('Characters (with spaces)', '$charsWithSpaces'),
+            row('Paragraphs', '$paragraphs'),
+            row('Reading time', '~$readMin min'),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Close')),
+        ],
+      ),
+    );
+  }
+
+  void _findReplace() {
+    final findCtrl = TextEditingController();
+    final replaceCtrl = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).cardTheme.color,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Find & Replace',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700, fontSize: 16)),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: findCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Find',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: replaceCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Replace with',
+                    prefixIcon: const Icon(Icons.find_replace),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          final n = _replaceAll(
+                              findCtrl.text, replaceCtrl.text);
+                          Navigator.pop(ctx);
+                          AppSnack.show(context,
+                              n > 0 ? 'Replaced $n match(es)' : 'No matches found');
+                        },
+                        child: const Text('Replace all'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Replace all occurrences in the plain text and rebuild the document.
+  /// Note: replacement produces unformatted text for the changed doc.
+  int _replaceAll(String find, String replace) {
+    if (find.isEmpty) return 0;
+    final text = _controller.document.toPlainText();
+    if (!text.contains(find)) return 0;
+    final count = find.allMatches(text).length;
+    final newText = text.replaceAll(find, replace);
+    final doc = Document()..insert(0, newText.endsWith('\n')
+        ? newText.substring(0, newText.length - 1)
+        : newText);
+    _controller.removeListener(_onContentChanged);
+    _controller.document = doc;
+    _controller.addListener(_onContentChanged);
+    _onContentChanged();
+    setState(() {});
+    return count;
   }
 }

@@ -147,6 +147,11 @@ class DocumentListTile extends StatelessWidget {
                     children: [
                       Row(
                         children: [
+                          if (doc.isPinned) ...[
+                            const Icon(Icons.push_pin,
+                                color: AppColors.primaryBlue, size: 14),
+                            const SizedBox(width: 4),
+                          ],
                           Expanded(
                             child: Text(
                               doc.title,

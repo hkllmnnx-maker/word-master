@@ -41,6 +41,26 @@ class DocumentModel extends HiveObject {
   @HiveField(9)
   int colorTag;
 
+  /// Folder this document belongs to (empty = no folder).
+  @HiveField(10)
+  String folder;
+
+  /// Whether the document is pinned to the top.
+  @HiveField(11)
+  bool isPinned;
+
+  /// Whether the document is in the trash (soft-deleted).
+  @HiveField(12)
+  bool isTrashed;
+
+  /// When it was moved to trash (for auto-purge logic).
+  @HiveField(13)
+  DateTime? trashedAt;
+
+  /// Version history snapshots (JSON content + timestamp).
+  @HiveField(14)
+  List<DocVersion> versions;
+
   DocumentModel({
     required this.id,
     required this.title,
@@ -52,7 +72,12 @@ class DocumentModel extends HiveObject {
     this.sharedCount = 0,
     this.syncStatus = 'synced',
     this.colorTag = 0,
-  });
+    this.folder = '',
+    this.isPinned = false,
+    this.isTrashed = false,
+    this.trashedAt,
+    List<DocVersion>? versions,
+  }) : versions = versions ?? [];
 
   int get wordCount {
     final trimmed = plainText.trim();
@@ -61,4 +86,30 @@ class DocumentModel extends HiveObject {
   }
 
   int get characterCount => plainText.replaceAll('\n', '').length;
+
+  /// Estimated reading time in minutes (avg 200 wpm).
+  int get readingMinutes => (wordCount / 200).ceil().clamp(0, 9999);
+}
+
+/// A point-in-time snapshot of a document's content for version history.
+@HiveType(typeId: 1)
+class DocVersion extends HiveObject {
+  @HiveField(0)
+  String contentJson;
+
+  @HiveField(1)
+  DateTime createdAt;
+
+  @HiveField(2)
+  int wordCount;
+
+  @HiveField(3)
+  String label;
+
+  DocVersion({
+    required this.contentJson,
+    required this.createdAt,
+    this.wordCount = 0,
+    this.label = 'Snapshot',
+  });
 }

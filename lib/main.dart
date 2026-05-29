@@ -16,6 +16,7 @@ Future<void> main() async {
 
   await Hive.initFlutter();
   Hive.registerAdapter(DocumentModelAdapter());
+  Hive.registerAdapter(DocVersionAdapter());
 
   final documentService = DocumentService();
   await documentService.init();

@@ -1,0 +1,539 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
+import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+
+import '../core/app_theme.dart';
+import '../core/utils.dart';
+import '../services/document_service.dart';
+import '../services/settings_service.dart';
+import '../widgets/format_toolbar.dart';
+
+/// Full document editor with the gradient header, live info strip,
+/// custom formatting toolbar and the rich-text canvas.
+class EditorScreen extends StatefulWidget {
+  final String? documentId;
+  final String? initialContentJson;
+  final String? initialTitle;
+
+  const EditorScreen({
+    super.key,
+    this.documentId,
+    this.initialContentJson,
+    this.initialTitle,
+  });
+
+  @override
+  State<EditorScreen> createState() => _EditorScreenState();
+}
+
+class _EditorScreenState extends State<EditorScreen> {
+  late QuillController _controller;
+  final FocusNode _focusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
+
+  String? _docId;
+  String _title = 'Untitled Document';
+  String _syncStatus = 'synced';
+  Timer? _autosaveTimer;
+  bool _dirty = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initController();
+  }
+
+  void _initController() {
+    final service = context.read<DocumentService>();
+    Document document;
+
+    if (widget.documentId != null) {
+      final doc = service.getById(widget.documentId!);
+      if (doc != null) {
+        _docId = doc.id;
+        _title = doc.title;
+        _syncStatus = doc.syncStatus;
+        document = _decode(doc.contentJson);
+      } else {
+        document = Document();
+      }
+    } else if (widget.initialContentJson != null) {
+      _title = widget.initialTitle ?? 'Untitled Document';
+      document = _decode(widget.initialContentJson!);
+    } else {
+      document = Document();
+    }
+
+    _controller = QuillController(
+      document: document,
+      selection: const TextSelection.collapsed(offset: 0),
+    );
+    _controller.addListener(_onContentChanged);
+  }
+
+  Document _decode(String json) {
+    try {
+      final data = jsonDecode(json);
+      return Document.fromJson(data as List);
+    } catch (_) {
+      return Document();
+    }
+  }
+
+  void _onContentChanged() {
+    if (!_dirty) {
+      setState(() {
+        _dirty = true;
+        _syncStatus = 'syncing';
+      });
+    }
+    final autosave = context.read<SettingsService>().autosave;
+    if (autosave) {
+      _autosaveTimer?.cancel();
+      _autosaveTimer =
+          Timer(const Duration(milliseconds: 900), () => _save(silent: true));
+    } else {
+      setState(() {});
+    }
+  }
+
+  Future<void> _save({bool silent = false}) async {
+    final service = context.read<DocumentService>();
+    final contentJson =
+        jsonEncode(_controller.document.toDelta().toJson());
+    final plainText = _controller.document.toPlainText();
+
+    if (_docId == null) {
+      final doc = await service.createDocument(
+        title: _title,
+        contentJson: contentJson,
+        plainText: plainText,
+      );
+      _docId = doc.id;
+    } else {
+      await service.updateDocument(
+        _docId!,
+        title: _title,
+        contentJson: contentJson,
+        plainText: plainText,
+        syncStatus: 'synced',
+      );
+    }
+    if (mounted) {
+      setState(() {
+        _dirty = false;
+        _syncStatus = 'synced';
+      });
+      if (!silent) AppSnack.show(context, 'Document saved');
+    }
+  }
+
+  @override
+  void dispose() {
+    _autosaveTimer?.cancel();
+    _controller.removeListener(_onContentChanged);
+    _controller.dispose();
+    _focusNode.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  int get _wordCount {
+    final text = _controller.document.toPlainText().trim();
+    if (text.isEmpty) return 0;
+    return text.split(RegExp(r'\s+')).length;
+  }
+
+  Future<bool> _onWillPop() async {
+    if (_dirty) await _save(silent: true);
+    return true;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fontScale = context.watch<SettingsService>().editorFontScale;
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final navigator = Navigator.of(context);
+        await _onWillPop();
+        if (mounted) navigator.pop();
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.scaffoldBg,
+        body: Column(
+          children: [
+            _buildHeader(),
+            FormatToolbar(
+              controller: _controller,
+              onInsertImage: _insertImagePlaceholder,
+              onInsertTable: _insertTablePlaceholder,
+            ),
+            Expanded(
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(12, 6, 12, 12),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1A2029) : Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                      color:
+                          isDark ? Colors.white10 : AppColors.cardBorder),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
+                    child: QuillEditor.basic(
+                      controller: _controller,
+                      focusNode: _focusNode,
+                      scrollController: _scrollController,
+                      config: QuillEditorConfig(
+                        placeholder: 'Start writing your document…',
+                        padding: const EdgeInsets.only(bottom: 80),
+                        customStyles: DefaultStyles(
+                          paragraph: DefaultTextBlockStyle(
+                            TextStyle(
+                              fontSize: 16 * fontScale,
+                              height: 1.5,
+                              color: isDark
+                                  ? Colors.white
+                                  : AppColors.textPrimary,
+                            ),
+                            const HorizontalSpacing(0, 0),
+                            const VerticalSpacing(6, 0),
+                            const VerticalSpacing(0, 0),
+                            null,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    final topPad = MediaQuery.of(context).padding.top;
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: AppColors.brandGradient,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+      ),
+      padding: EdgeInsets.only(top: topPad),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(8, 8, 12, 14),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  onPressed: () async {
+                    final navigator = Navigator.of(context);
+                    await _onWillPop();
+                    if (mounted) navigator.pop();
+                  },
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _renameDialog,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            Text(
+                              'Tap to rename',
+                              style: TextStyle(
+                                color:
+                                    Colors.white.withValues(alpha: 0.8),
+                                fontSize: 11,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(Icons.edit,
+                                size: 11,
+                                color:
+                                    Colors.white.withValues(alpha: 0.8)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                _headerBtn(Icons.save_outlined, () => _save()),
+                _headerBtn(Icons.share_outlined, _share),
+                _headerBtn(Icons.more_vert, _showMore),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _infoStrip(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _headerBtn(IconData icon, VoidCallback onTap) {
+    return IconButton(
+      onPressed: onTap,
+      icon: Icon(icon, color: Colors.white, size: 22),
+      splashRadius: 22,
+    );
+  }
+
+  Widget _infoStrip() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        children: [
+          _infoCell('Document', _title, flex: 3),
+          _divider(),
+          _infoCell('$_wordCount', 'Words', flex: 2),
+          _divider(),
+          _infoCell(
+              _syncStatus == 'syncing' ? 'Saving…' : 'Synced', 'Cloud',
+              flex: 2,
+              icon: _syncStatus == 'syncing'
+                  ? Icons.sync
+                  : Icons.cloud_done),
+        ],
+      ),
+    );
+  }
+
+  Widget _divider() => Container(
+        width: 1,
+        height: 26,
+        color: Colors.white.withValues(alpha: 0.25),
+        margin: const EdgeInsets.symmetric(horizontal: 8),
+      );
+
+  Widget _infoCell(String value, String label,
+      {int flex = 1, IconData? icon}) {
+    return Expanded(
+      flex: flex,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (icon != null) ...[
+                Icon(icon, color: Colors.white, size: 13),
+                const SizedBox(width: 3),
+              ],
+              Flexible(
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.85),
+              fontSize: 10.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _renameDialog() {
+    final controller = TextEditingController(text: _title);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text('Rename document'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12)),
+            labelText: 'Title',
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                setState(() => _title = name);
+                _save(silent: true);
+              }
+              Navigator.pop(ctx);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _share() {
+    final text = _controller.document.toPlainText().trim();
+    Share.share(
+      text.isEmpty ? _title : '$_title\n\n$text',
+      subject: _title,
+    );
+  }
+
+  void _insertImagePlaceholder() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text('Insert image URL'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: 'https://… (image link)',
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              final url = controller.text.trim();
+              if (url.isNotEmpty) {
+                final index = _controller.selection.baseOffset;
+                final length = _controller.selection.extentOffset - index;
+                _controller.replaceText(
+                  index,
+                  length,
+                  BlockEmbed.image(url),
+                  null,
+                );
+              }
+              Navigator.pop(ctx);
+            },
+            child: const Text('Insert'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _insertTablePlaceholder() {
+    // Insert a lightweight text-based table scaffold.
+    final index = _controller.selection.baseOffset;
+    const table = '\n| Column 1 | Column 2 | Column 3 |\n'
+        '| --- | --- | --- |\n'
+        '| Cell | Cell | Cell |\n'
+        '| Cell | Cell | Cell |\n';
+    _controller.replaceText(
+        index, 0, table, TextSelection.collapsed(offset: index + table.length));
+    AppSnack.show(context, 'Table inserted');
+  }
+
+  void _showMore() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).cardTheme.color,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 42,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.textMuted.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.text_fields),
+              title: const Text('Word count'),
+              subtitle: Text(
+                  '$_wordCount words · ${_controller.document.toPlainText().replaceAll('\n', '').length} characters'),
+              onTap: () => Navigator.pop(ctx),
+            ),
+            ListTile(
+              leading: const Icon(Icons.cleaning_services_outlined),
+              title: const Text('Clear formatting'),
+              onTap: () {
+                final sel = _controller.selection;
+                if (!sel.isCollapsed) {
+                  _controller.formatSelection(
+                      Attribute.clone(Attribute.bold, null));
+                  _controller.formatSelection(
+                      Attribute.clone(Attribute.italic, null));
+                  _controller.formatSelection(
+                      Attribute.clone(Attribute.underline, null));
+                }
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.save_alt),
+              title: const Text('Save now'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _save();
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}

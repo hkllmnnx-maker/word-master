@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -10,10 +11,35 @@ import '../models/document_model.dart';
 import '../services/document_service.dart';
 import '../services/export_service.dart';
 import 'editor_screen.dart';
+import 'pin_screen.dart';
+import 'reader_screen.dart';
 import 'version_history_screen.dart';
 
 /// Shared bottom-sheet of contextual actions for a document.
 class DocActions {
+  /// يفتح المستند في المحرر، ويتحقق من رمز PIN إذا كان مقفلاً.
+  static Future<void> openDocument(
+      BuildContext context, DocumentModel doc) async {
+    if (doc.isLocked) {
+      final ok = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PinScreen(
+            mode: PinMode.verify,
+            docTitle: doc.title,
+            expectedPin: doc.lockPin,
+          ),
+        ),
+      );
+      if (ok != true) return;
+    }
+    if (!context.mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => EditorScreen(documentId: doc.id)),
+    );
+  }
+
   static void showMenu(BuildContext context, DocumentModel doc) {
     final service = context.read<DocumentService>();
     showModalBottomSheet(
@@ -58,10 +84,14 @@ class DocActions {
                 const Divider(height: 1),
                 _tile(ctx, Icons.edit_outlined, AppStrings.openEdit, () {
                   Navigator.pop(ctx);
+                  openDocument(context, doc);
+                }),
+                _tile(ctx, Icons.menu_book_outlined, AppStrings.readMode, () {
+                  Navigator.pop(ctx);
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (_) => EditorScreen(documentId: doc.id)),
+                        builder: (_) => ReaderScreen(documentId: doc.id)),
                   );
                 }),
                 _tile(
@@ -121,6 +151,21 @@ class DocActions {
                     AppSnack.show(context, AppStrings.documentDuplicated);
                   }
                 }),
+                _tile(
+                  ctx,
+                  doc.isLocked ? Icons.lock_open_outlined : Icons.lock_outline,
+                  doc.isLocked
+                      ? AppStrings.unlockDocument
+                      : AppStrings.lockDocument,
+                  () {
+                    Navigator.pop(ctx);
+                    if (doc.isLocked) {
+                      _unlockDoc(context, doc);
+                    } else {
+                      _lockDoc(context, doc);
+                    }
+                  },
+                ),
                 _tile(ctx, Icons.delete_outline, AppStrings.moveToTrash, () {
                   service.moveToTrash(doc.id);
                   Navigator.pop(ctx);
@@ -173,12 +218,29 @@ class DocActions {
                   ExportService.toHtml(doc.contentJson, title: doc.title);
               await Share.share(html, subject: '${doc.title}.html');
             }),
+            _tile(ctx, Icons.notes_outlined, AppStrings.shareMarkdown,
+                () async {
+              Navigator.pop(ctx);
+              final md = ExportService.toMarkdown(doc.contentJson);
+              await Share.share(md.isEmpty ? doc.title : md,
+                  subject: '${doc.title}.md');
+            }),
             _tile(ctx, Icons.text_snippet_outlined, AppStrings.shareText,
                 () async {
               Navigator.pop(ctx);
               final text = ExportService.toPlainText(doc.contentJson);
               await Share.share(text.isEmpty ? doc.title : text,
                   subject: doc.title);
+            }),
+            _tile(ctx, Icons.copy_outlined, AppStrings.copyToClipboard,
+                () async {
+              Navigator.pop(ctx);
+              final text = ExportService.toPlainText(doc.contentJson);
+              await Clipboard.setData(
+                  ClipboardData(text: text.isEmpty ? doc.title : text));
+              if (context.mounted) {
+                AppSnack.show(context, AppStrings.copiedToClipboard);
+              }
             }),
             const SizedBox(height: 10),
           ],
@@ -334,6 +396,44 @@ class DocActions {
         ],
       ),
     );
+  }
+
+  // ---- Lock / Unlock -------------------------------------------------------
+
+  static Future<void> _lockDoc(
+      BuildContext context, DocumentModel doc) async {
+    final service = context.read<DocumentService>();
+    final pin = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PinScreen(mode: PinMode.setup, docTitle: doc.title),
+      ),
+    );
+    if (pin == null || pin.isEmpty) return;
+    await service.setLock(doc.id, pin);
+    if (context.mounted) {
+      AppSnack.show(context, AppStrings.documentLocked);
+    }
+  }
+
+  static Future<void> _unlockDoc(
+      BuildContext context, DocumentModel doc) async {
+    final service = context.read<DocumentService>();
+    final ok = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PinScreen(
+          mode: PinMode.verify,
+          docTitle: doc.title,
+          expectedPin: doc.lockPin,
+        ),
+      ),
+    );
+    if (ok != true) return;
+    await service.removeLock(doc.id);
+    if (context.mounted) {
+      AppSnack.show(context, AppStrings.documentUnlocked);
+    }
   }
 
   static void _colorTagSheet(BuildContext context, DocumentModel doc) {

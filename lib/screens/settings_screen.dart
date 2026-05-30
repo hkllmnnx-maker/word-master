@@ -102,6 +102,13 @@ class SettingsScreen extends StatelessWidget {
                     subtitle: const Text(AppStrings.autoSaveSub),
                     onChanged: (v) => settings.setAutosave(v),
                   ),
+                  _divider(),
+                  _actionTile(
+                    Icons.flag_outlined,
+                    AppStrings.dailyGoal,
+                    '${settings.dailyGoal} ${AppStrings.words} · ${AppStrings.dailyGoalSub}',
+                    () => _editDailyGoal(context, settings),
+                  ),
                 ]),
                 const SizedBox(height: 18),
                 _sectionLabel(AppStrings.data),
@@ -141,8 +148,13 @@ class SettingsScreen extends StatelessWidget {
                 const SizedBox(height: 18),
                 _sectionLabel(AppStrings.about),
                 _card([
-                  _actionTile(Icons.info_outline, AppStrings.appName,
-                      AppStrings.version, () {}),
+                  _actionTile(Icons.info_outline, AppStrings.aboutApp,
+                      AppStrings.appTagline, () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const _AboutScreen()),
+                    );
+                  }),
                   _divider(),
                   _actionTile(Icons.star_outline, AppStrings.rateApp,
                       AppStrings.rateSub, () {
@@ -313,6 +325,44 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  void _editDailyGoal(BuildContext context, SettingsService settings) {
+    final controller =
+        TextEditingController(text: settings.dailyGoal.toString());
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text(AppStrings.setDailyGoal),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            labelText: AppStrings.goalWords,
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text(AppStrings.cancel)),
+          ElevatedButton(
+            onPressed: () {
+              final value = int.tryParse(controller.text.trim());
+              if (value != null && value > 0) {
+                settings.setDailyGoal(value);
+              }
+              Navigator.pop(ctx);
+            },
+            child: const Text(AppStrings.save),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _confirmClear(BuildContext context, DocumentService service) {
     showDialog(
       context: context,
@@ -416,5 +466,121 @@ class SettingsScreen extends StatelessWidget {
         AppSnack.show(context, AppStrings.importFailed, error: true);
       }
     }
+  }
+}
+
+/// شاشة "حول التطبيق" التفصيلية مع شعار التطبيق وقائمة المميزات.
+class _AboutScreen extends StatelessWidget {
+  const _AboutScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    final features = [
+      AppStrings.feature1,
+      AppStrings.feature2,
+      AppStrings.feature3,
+      AppStrings.feature4,
+      AppStrings.feature5,
+      AppStrings.feature6,
+    ];
+
+    return Scaffold(
+      backgroundColor: AppColors.scaffoldBg,
+      body: Column(
+        children: [
+          GradientHeader(
+            title: AppStrings.aboutApp,
+            leading: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: const Icon(Icons.arrow_back_ios_new,
+                  color: Colors.white, size: 22),
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+              children: [
+                Center(
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 92,
+                        height: 92,
+                        decoration: BoxDecoration(
+                          gradient: AppColors.brandGradient,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.gradientMid
+                                  .withValues(alpha: 0.4),
+                              blurRadius: 18,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.description_rounded,
+                            color: Colors.white, size: 48),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        AppStrings.appName,
+                        style: TextStyle(
+                            fontSize: 22, fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        AppStrings.version,
+                        style: TextStyle(color: AppColors.textMuted),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        AppStrings.appTagline,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: AppColors.textSecondary, height: 1.4),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 28),
+                const Text(
+                  AppStrings.featuresTitle,
+                  style:
+                      TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: AppColors.cardBorder),
+                  ),
+                  child: Column(
+                    children: features
+                        .map((f) => ListTile(
+                              leading: const Icon(Icons.check_circle,
+                                  color: Color(0xFF22C55E)),
+                              title: Text(f,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600)),
+                              dense: true,
+                            ))
+                        .toList(),
+                  ),
+                ),
+                const SizedBox(height: 28),
+                Center(
+                  child: Text(
+                    AppStrings.developedWith,
+                    style: TextStyle(
+                        color: AppColors.textMuted, fontSize: 12.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

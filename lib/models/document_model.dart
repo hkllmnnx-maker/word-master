@@ -61,6 +61,10 @@ class DocumentModel extends HiveObject {
   @HiveField(14)
   List<DocVersion> versions;
 
+  /// Optional PIN code protecting the document (empty = not locked).
+  @HiveField(15)
+  String lockPin;
+
   DocumentModel({
     required this.id,
     required this.title,
@@ -77,7 +81,11 @@ class DocumentModel extends HiveObject {
     this.isTrashed = false,
     this.trashedAt,
     List<DocVersion>? versions,
+    this.lockPin = '',
   }) : versions = versions ?? [];
+
+  /// Whether this document is protected by a PIN.
+  bool get isLocked => lockPin.isNotEmpty;
 
   int get wordCount {
     final trimmed = plainText.trim();

@@ -7,7 +7,6 @@ import '../models/document_model.dart';
 import '../services/document_service.dart';
 import '../widgets/gradient_header.dart';
 import '../widgets/document_card.dart';
-import 'editor_screen.dart';
 import 'doc_actions.dart';
 
 enum _DocFilter { all, favorites, recent, folder }
@@ -382,9 +381,6 @@ class _DocsScreenState extends State<DocsScreen> {
   }
 
   void _open(DocumentModel doc) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => EditorScreen(documentId: doc.id)),
-    );
+    DocActions.openDocument(context, doc);
   }
 }

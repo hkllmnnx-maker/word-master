@@ -192,4 +192,61 @@ class AppStrings {
   static const hoursAgo = 'س';
   static const yesterday = 'أمس';
   static const daysAgo = 'يوم';
+
+  // وضع القراءة
+  static const readMode = 'وضع القراءة';
+  static const readerMode = 'القراءة';
+  static const increaseFont = 'تكبير الخط';
+  static const decreaseFont = 'تصغير الخط';
+  static const emptyDocument = 'هذا المستند فارغ';
+
+  // القفل والخصوصية
+  static const lockDocument = 'قفل المستند';
+  static const unlockDocument = 'إلغاء قفل المستند';
+  static const locked = 'مقفل';
+  static const setPin = 'تعيين رمز PIN';
+  static const enterPin = 'أدخل رمز PIN';
+  static const confirmPin = 'تأكيد رمز PIN';
+  static const wrongPin = 'رمز PIN غير صحيح';
+  static const pinMismatch = 'الرمزان غير متطابقين';
+  static const pinTooShort = 'يجب أن يكون الرمز 4 أرقام على الأقل';
+  static const documentLocked = 'تم قفل المستند';
+  static const documentUnlocked = 'تم إلغاء قفل المستند';
+  static const enterPinToOpen = 'أدخل الرمز لفتح المستند';
+  static const lockHint = 'احمِ مستنداتك الخاصة برمز سري';
+  static const unlock = 'فتح';
+
+  // الوضع المركّز
+  static const focusMode = 'الوضع المركّز';
+  static const focusModeOn = 'تم تفعيل الوضع المركّز';
+  static const exitFocus = 'الخروج من الوضع المركّز';
+
+  // التصدير الإضافي
+  static const shareMarkdown = 'مشاركة كـ Markdown';
+  static const copyToClipboard = 'نسخ النص';
+  static const copiedToClipboard = 'تم نسخ النص إلى الحافظة';
+
+  // لوحة القيادة وأهداف الكتابة
+  static const todayProgress = 'تقدّم اليوم';
+  static const dailyGoal = 'الهدف اليومي';
+  static const dailyGoalSub = 'عدد الكلمات المستهدف يومياً';
+  static const wordsToday = 'كلمات اليوم';
+  static const goalReached = 'تهانينا! حققت هدفك اليومي 🎉';
+  static const keepWriting = 'استمر في الكتابة لتحقيق هدفك';
+  static const setDailyGoal = 'تعيين الهدف اليومي';
+  static const goalWords = 'عدد الكلمات';
+  static const streak = 'أيام متتالية';
+  static const dayStreak = 'يوم متتالٍ';
+
+  // حول التطبيق
+  static const aboutApp = 'حول التطبيق';
+  static const appTagline = 'محرر مستندات احترافي بين يديك';
+  static const featuresTitle = 'المميزات';
+  static const feature1 = 'محرر نصوص غني بالتنسيقات';
+  static const feature2 = 'قوالب جاهزة احترافية';
+  static const feature3 = 'تصدير PDF و HTML و Markdown';
+  static const feature4 = 'سجل إصدارات تلقائي';
+  static const feature5 = 'قفل المستندات بكلمة سر';
+  static const feature6 = 'وضع داكن وخطوط قابلة للتخصيص';
+  static const developedWith = 'تم التطوير باستخدام Flutter';
 }

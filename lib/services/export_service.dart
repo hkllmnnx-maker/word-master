@@ -146,6 +146,51 @@ $body
     return text;
   }
 
+  // ---- Markdown ------------------------------------------------------------
+
+  static String toMarkdown(String contentJson) {
+    final blocks = _parse(contentJson);
+    final out = StringBuffer();
+
+    for (final b in blocks) {
+      final attrs = b.blockAttrs;
+      final inner = b.runs.map((r) => _runToMarkdown(r)).join();
+      final header = attrs['header'];
+      final list = attrs['list'];
+
+      if (header == 1) {
+        out.writeln('# $inner');
+      } else if (header == 2) {
+        out.writeln('## $inner');
+      } else if (header == 3) {
+        out.writeln('### $inner');
+      } else if (list == 'bullet') {
+        out.writeln('- $inner');
+      } else if (list == 'ordered') {
+        out.writeln('1. $inner');
+      } else if (attrs['blockquote'] == true) {
+        out.writeln('> $inner');
+      } else if (attrs['code-block'] == true) {
+        out.writeln('    $inner');
+      } else {
+        out.writeln(inner);
+      }
+    }
+    return out.toString().trimRight();
+  }
+
+  static String _runToMarkdown(_Run r) {
+    var text = r.text;
+    final a = r.attrs;
+    if (text.trim().isEmpty) return text;
+    if (a['bold'] == true) text = '**$text**';
+    if (a['italic'] == true) text = '*$text*';
+    if (a['strike'] == true) text = '~~$text~~';
+    if (a['code'] == true) text = '`$text`';
+    if (a['link'] is String) text = '[$text](${a['link']})';
+    return text;
+  }
+
   // ---- PDF -----------------------------------------------------------------
 
   static Future<Uint8List> toPdf(String contentJson,

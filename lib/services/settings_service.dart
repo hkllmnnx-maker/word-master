@@ -10,6 +10,7 @@ class SettingsService extends ChangeNotifier {
   static const _kEditorFontScale = 'editor_font_scale';
   static const _kAutosave = 'autosave';
   static const _kUserName = 'user_name';
+  static const _kDailyGoal = 'daily_goal';
 
   late SharedPreferences _prefs;
 
@@ -17,11 +18,13 @@ class SettingsService extends ChangeNotifier {
   double _editorFontScale = 1.0;
   bool _autosave = true;
   String _userName = AppStrings.defaultUserName;
+  int _dailyGoal = 300;
 
   ThemeMode get themeMode => _themeMode;
   double get editorFontScale => _editorFontScale;
   bool get autosave => _autosave;
   String get userName => _userName;
+  int get dailyGoal => _dailyGoal;
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
@@ -34,6 +37,7 @@ class SettingsService extends ChangeNotifier {
     _editorFontScale = _prefs.getDouble(_kEditorFontScale) ?? 1.0;
     _autosave = _prefs.getBool(_kAutosave) ?? true;
     _userName = _prefs.getString(_kUserName) ?? AppStrings.defaultUserName;
+    _dailyGoal = _prefs.getInt(_kDailyGoal) ?? 300;
     notifyListeners();
   }
 
@@ -63,6 +67,12 @@ class SettingsService extends ChangeNotifier {
   Future<void> setUserName(String name) async {
     _userName = name;
     await _prefs.setString(_kUserName, name);
+    notifyListeners();
+  }
+
+  Future<void> setDailyGoal(int goal) async {
+    _dailyGoal = goal.clamp(50, 5000);
+    await _prefs.setInt(_kDailyGoal, _dailyGoal);
     notifyListeners();
   }
 }

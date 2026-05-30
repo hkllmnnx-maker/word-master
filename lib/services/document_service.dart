@@ -196,6 +196,80 @@ class DocumentService extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ---- Lock / privacy ------------------------------------------------------
+
+  /// Sets (or updates) a PIN lock on the document.
+  Future<void> setLock(String id, String pin) async {
+    final doc = getById(id);
+    if (doc == null) return;
+    doc.lockPin = pin;
+    await doc.save();
+    notifyListeners();
+  }
+
+  /// Removes the lock from a document.
+  Future<void> removeLock(String id) async {
+    final doc = getById(id);
+    if (doc == null) return;
+    doc.lockPin = '';
+    await doc.save();
+    notifyListeners();
+  }
+
+  /// Verifies a PIN against the stored one.
+  bool verifyPin(String id, String pin) {
+    final doc = getById(id);
+    if (doc == null) return false;
+    return doc.lockPin == pin;
+  }
+
+  int get lockedCount => _active.where((d) => d.isLocked).length;
+
+  // ---- Daily writing tracking ---------------------------------------------
+
+  static const String _dailyKey = 'daily_words';
+  static const String _dailyDateKey = 'daily_words_date';
+  static const String _streakKey = 'write_streak';
+  static const String _lastWriteDayKey = 'last_write_day';
+
+  String _todayKey() {
+    final n = DateTime.now();
+    return '${n.year}-${n.month}-${n.day}';
+  }
+
+  /// Words written today (resets daily).
+  int get wordsToday {
+    final savedDate = _prefs.getString(_dailyDateKey);
+    if (savedDate != _todayKey()) return 0;
+    return _prefs.getInt(_dailyKey) ?? 0;
+  }
+
+  /// Consecutive days the user wrote something.
+  int get writeStreak => _prefs.getInt(_streakKey) ?? 0;
+
+  /// Adds words written to today's counter and updates the streak.
+  Future<void> addWordsWritten(int delta) async {
+    if (delta <= 0) return;
+    final today = _todayKey();
+    final savedDate = _prefs.getString(_dailyDateKey);
+    int current = (savedDate == today) ? (_prefs.getInt(_dailyKey) ?? 0) : 0;
+    current += delta;
+    await _prefs.setString(_dailyDateKey, today);
+    await _prefs.setInt(_dailyKey, current);
+
+    // Streak logic
+    final lastDay = _prefs.getString(_lastWriteDayKey);
+    if (lastDay != today) {
+      final yesterday = DateTime.now().subtract(const Duration(days: 1));
+      final yKey = '${yesterday.year}-${yesterday.month}-${yesterday.day}';
+      int streak = _prefs.getInt(_streakKey) ?? 0;
+      streak = (lastDay == yKey) ? streak + 1 : 1;
+      await _prefs.setInt(_streakKey, streak);
+      await _prefs.setString(_lastWriteDayKey, today);
+    }
+    notifyListeners();
+  }
+
   // ---- Version history -----------------------------------------------------
 
   /// Saves a snapshot if content changed meaningfully. Keeps last 20.

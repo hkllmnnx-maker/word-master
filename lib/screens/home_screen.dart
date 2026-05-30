@@ -6,6 +6,7 @@ import '../core/strings.dart';
 import '../core/utils.dart';
 import '../models/document_model.dart';
 import '../services/document_service.dart';
+import '../services/settings_service.dart';
 import '../widgets/gradient_header.dart';
 import '../widgets/document_card.dart';
 import 'editor_screen.dart';
@@ -62,6 +63,8 @@ class HomeScreen extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
                 children: [
                   _quickActions(context),
+                  const SizedBox(height: 20),
+                  _dailyProgress(context, service),
                   const SizedBox(height: 24),
                   if (featured != null) ...[
                     _sectionTitle(AppStrings.continueWriting),
@@ -128,6 +131,122 @@ class HomeScreen extends StatelessWidget {
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: Colors.white, size: 20),
+      ),
+    );
+  }
+
+  Widget _dailyProgress(BuildContext context, DocumentService service) {
+    final settings = context.watch<SettingsService>();
+    final goal = settings.dailyGoal;
+    final today = service.wordsToday;
+    final streak = service.writeStreak;
+    final progress = goal == 0 ? 0.0 : (today / goal).clamp(0.0, 1.0);
+    final reached = today >= goal && goal > 0;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.activeChipBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  reached
+                      ? Icons.emoji_events_rounded
+                      : Icons.local_fire_department_rounded,
+                  color: reached
+                      ? const Color(0xFFF59E0B)
+                      : AppColors.primaryBlue,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      AppStrings.todayProgress,
+                      style: TextStyle(
+                          fontWeight: FontWeight.w800, fontSize: 15),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$today / $goal ${AppStrings.words}',
+                      style: const TextStyle(
+                          color: AppColors.textMuted, fontSize: 12.5),
+                    ),
+                  ],
+                ),
+              ),
+              if (streak > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF3E0),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.bolt_rounded,
+                          size: 15, color: Color(0xFFF59E0B)),
+                      const SizedBox(width: 3),
+                      Text(
+                        '$streak ${AppStrings.dayStreak}',
+                        style: const TextStyle(
+                          color: Color(0xFFB45309),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: progress.toDouble(),
+              minHeight: 9,
+              backgroundColor: AppColors.activeChipBg,
+              valueColor: AlwaysStoppedAnimation(
+                reached ? const Color(0xFF22C55E) : AppColors.primaryBlue,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            reached ? AppStrings.goalReached : AppStrings.keepWriting,
+            style: TextStyle(
+              fontSize: 12,
+              color: reached
+                  ? const Color(0xFF16A34A)
+                  : AppColors.textSecondary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -332,10 +451,7 @@ class HomeScreen extends StatelessWidget {
       );
 
   void _open(BuildContext context, DocumentModel doc) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => EditorScreen(documentId: doc.id)),
-    );
+    DocActions.openDocument(context, doc);
   }
 
   void _openSearch(BuildContext context) {
@@ -391,11 +507,7 @@ class _DocSearchDelegate extends SearchDelegate {
                 doc: d,
                 onTap: () {
                   close(context, null);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => EditorScreen(documentId: d.id)),
-                  );
+                  DocActions.openDocument(context, d);
                 },
                 onFavorite: () => service.toggleFavorite(d.id),
                 onMore: () => DocActions.showMenu(context, d),

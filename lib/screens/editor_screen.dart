@@ -43,6 +43,8 @@ class _EditorScreenState extends State<EditorScreen> {
   Timer? _autosaveTimer;
   bool _dirty = false;
   DateTime? _lastVersionAt;
+  bool _focusMode = false;
+  int _lastSavedWordCount = 0;
 
   @override
   void initState() {
@@ -76,6 +78,7 @@ class _EditorScreenState extends State<EditorScreen> {
       selection: const TextSelection.collapsed(offset: 0),
     );
     _controller.addListener(_onContentChanged);
+    _lastSavedWordCount = _wordCount;
   }
 
   Document _decode(String json) {
@@ -126,6 +129,14 @@ class _EditorScreenState extends State<EditorScreen> {
         syncStatus: 'synced',
       );
     }
+
+    // Track newly written words for the daily writing goal.
+    final currentWords = _wordCount;
+    final delta = currentWords - _lastSavedWordCount;
+    if (delta > 0) {
+      await service.addWordsWritten(delta);
+    }
+    _lastSavedWordCount = currentWords;
 
     // Save a periodic version snapshot (throttled inside the service).
     final now = DateTime.now();
@@ -180,14 +191,24 @@ class _EditorScreenState extends State<EditorScreen> {
       },
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBg,
+        floatingActionButton: _focusMode
+            ? FloatingActionButton.small(
+                onPressed: () => setState(() => _focusMode = false),
+                backgroundColor: AppColors.primaryBlue,
+                tooltip: AppStrings.exitFocus,
+                child: const Icon(Icons.fullscreen_exit, color: Colors.white),
+              )
+            : null,
         body: Column(
           children: [
-            _buildHeader(),
-            FormatToolbar(
-              controller: _controller,
-              onInsertImage: _insertImagePlaceholder,
-              onInsertTable: _insertTablePlaceholder,
-            ),
+            if (!_focusMode) _buildHeader(),
+            if (!_focusMode)
+              FormatToolbar(
+                controller: _controller,
+                onInsertImage: _insertImagePlaceholder,
+                onInsertTable: _insertTablePlaceholder,
+              ),
+            if (_focusMode) SizedBox(height: MediaQuery.of(context).padding.top),
             Expanded(
               child: Container(
                 margin: const EdgeInsets.fromLTRB(12, 6, 12, 12),
@@ -546,6 +567,15 @@ class _EditorScreenState extends State<EditorScreen> {
                 onTap: () {
                   Navigator.pop(ctx);
                   _findReplace();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.center_focus_strong_outlined),
+                title: const Text(AppStrings.focusMode),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  setState(() => _focusMode = true);
+                  AppSnack.show(context, AppStrings.focusModeOn);
                 },
               ),
               ListTile(

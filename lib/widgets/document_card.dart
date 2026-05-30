@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_theme.dart';
+import '../core/strings.dart';
 import '../core/utils.dart';
 import '../models/document_model.dart';
 
@@ -18,7 +19,7 @@ class RecentDocCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: 150,
-        margin: const EdgeInsets.only(right: 12),
+        margin: const EdgeInsetsDirectional.only(end: 12),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1A2029) : Colors.white,
@@ -53,7 +54,7 @@ class RecentDocCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              '${doc.wordCount} words',
+              '${doc.wordCount} ${AppStrings.words}',
               style: const TextStyle(
                 fontSize: 11.5,
                 color: AppColors.textMuted,
@@ -175,7 +176,7 @@ class DocumentListTile extends StatelessWidget {
                               size: 13, color: AppColors.textMuted),
                           const SizedBox(width: 3),
                           Text(
-                            '${doc.wordCount} words',
+                            '${doc.wordCount} ${AppStrings.words}',
                             style: const TextStyle(
                               fontSize: 12,
                               color: AppColors.textMuted,

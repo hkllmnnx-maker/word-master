@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/app_theme.dart';
+import '../core/strings.dart';
 import '../core/utils.dart';
 import '../models/document_model.dart';
 import '../services/document_service.dart';
@@ -25,10 +26,11 @@ class VersionHistoryScreen extends StatelessWidget {
       body: Column(
         children: [
           GradientHeader(
-            title: 'Version History',
+            title: AppStrings.versionHistory,
             leading: GestureDetector(
               onTap: () => Navigator.pop(context),
-              child: const Icon(Icons.arrow_back, color: Colors.white),
+              child: const Icon(Icons.arrow_back_ios_new,
+                  color: Colors.white),
             ),
           ),
           Expanded(
@@ -90,7 +92,7 @@ class VersionHistoryScreen extends StatelessWidget {
                                             borderRadius:
                                                 BorderRadius.circular(8),
                                           ),
-                                          child: const Text('Latest',
+                                          child: const Text(AppStrings.latest,
                                               style: TextStyle(
                                                   fontSize: 11,
                                                   color:
@@ -103,7 +105,7 @@ class VersionHistoryScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 3),
                                   Text(
-                                    '${v.wordCount} words · ${Formatters.relativeDate(v.createdAt)}',
+                                    '${v.wordCount} ${AppStrings.words} · ${Formatters.relativeDate(v.createdAt)}',
                                     style: const TextStyle(
                                         fontSize: 12,
                                         color: AppColors.textMuted),
@@ -114,14 +116,14 @@ class VersionHistoryScreen extends StatelessWidget {
                             TextButton(
                               onPressed: () =>
                                   _preview(context, doc!, v),
-                              child: const Text('View'),
+                              child: const Text(AppStrings.view),
                             ),
                             IconButton(
                               onPressed: () =>
                                   _restore(context, doc!, v),
                               icon: const Icon(Icons.restore,
                                   color: AppColors.primaryBlue),
-                              tooltip: 'Restore',
+                              tooltip: AppStrings.restore,
                             ),
                           ],
                         ),
@@ -150,13 +152,13 @@ class VersionHistoryScreen extends StatelessWidget {
                 size: 44, color: AppColors.primaryBlue),
           ),
           const SizedBox(height: 16),
-          const Text('No versions yet',
+          const Text(AppStrings.noVersionsYet,
               style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
           const SizedBox(height: 6),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              'Snapshots are saved automatically as you edit. Come back later to see your history.',
+              AppStrings.versionsHint,
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textMuted),
             ),
@@ -177,19 +179,19 @@ class VersionHistoryScreen extends StatelessWidget {
         content: SizedBox(
           width: double.maxFinite,
           child: SingleChildScrollView(
-            child: Text(text.isEmpty ? '(empty)' : text),
+            child: Text(text.isEmpty ? '—' : text),
           ),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Close')),
+              child: const Text(AppStrings.close)),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
               _restore(context, doc, v);
             },
-            child: const Text('Restore'),
+            child: const Text(AppStrings.restore),
           ),
         ],
       ),
@@ -203,23 +205,22 @@ class VersionHistoryScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('Restore this version?'),
-        content: const Text(
-            'The current content will be replaced with this snapshot. A new snapshot of the current state is kept in history.'),
+        title: const Text(AppStrings.restoreThisVersion),
+        content: const Text(AppStrings.restoreVersionMsg),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+              child: const Text(AppStrings.cancel)),
           ElevatedButton(
             onPressed: () async {
-              await service.saveVersion(doc.id, label: 'Before restore');
+              await service.saveVersion(doc.id, label: AppStrings.beforeRestore);
               await service.restoreVersion(doc.id, v);
               if (ctx.mounted) Navigator.pop(ctx);
               if (context.mounted) {
-                AppSnack.show(context, 'Version restored');
+                AppSnack.show(context, AppStrings.versionRestored);
               }
             },
-            child: const Text('Restore'),
+            child: const Text(AppStrings.restore),
           ),
         ],
       ),

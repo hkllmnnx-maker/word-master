@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/app_theme.dart';
+import '../core/strings.dart';
 import '../models/document_model.dart';
 import '../services/document_service.dart';
 import '../widgets/gradient_header.dart';
@@ -70,7 +71,7 @@ class _DocsScreenState extends State<DocsScreen> {
       body: Column(
         children: [
           GradientHeader(
-            title: 'My Documents',
+            title: AppStrings.myDocuments,
             leading: const Icon(Icons.folder_copy_rounded,
                 color: Colors.white, size: 26),
             actions: [
@@ -112,7 +113,7 @@ class _DocsScreenState extends State<DocsScreen> {
         cursorColor: Colors.white,
         decoration: InputDecoration(
           border: InputBorder.none,
-          hintText: 'Search documents…',
+          hintText: AppStrings.searchDocuments,
           hintStyle:
               TextStyle(color: Colors.white.withValues(alpha: 0.8)),
           icon: const Icon(Icons.search, color: Colors.white),
@@ -127,7 +128,7 @@ class _DocsScreenState extends State<DocsScreen> {
     Widget chip(String label, bool active, VoidCallback onTap,
         {IconData? icon}) {
       return Padding(
-        padding: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsetsDirectional.only(end: 8),
         child: GestureDetector(
           onTap: onTap,
           child: AnimatedContainer(
@@ -175,12 +176,12 @@ class _DocsScreenState extends State<DocsScreen> {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          chip('All', _filter == _DocFilter.all,
+          chip(AppStrings.filterAll, _filter == _DocFilter.all,
               () => setState(() => _filter = _DocFilter.all)),
-          chip('Favorites', _filter == _DocFilter.favorites,
+          chip(AppStrings.favorites, _filter == _DocFilter.favorites,
               () => setState(() => _filter = _DocFilter.favorites),
               icon: Icons.star_rounded),
-          chip('Recent', _filter == _DocFilter.recent,
+          chip(AppStrings.filterRecent, _filter == _DocFilter.recent,
               () => setState(() => _filter = _DocFilter.recent),
               icon: Icons.schedule),
           ...service.folders.map((f) => chip(
@@ -192,7 +193,7 @@ class _DocsScreenState extends State<DocsScreen> {
                 }),
                 icon: Icons.folder,
               )),
-          chip('New folder', false, _newFolderDialog,
+          chip(AppStrings.newFolder, false, _newFolderDialog,
               icon: Icons.create_new_folder_outlined),
         ],
       ),
@@ -207,12 +208,12 @@ class _DocsScreenState extends State<DocsScreen> {
       builder: (ctx) => AlertDialog(
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('New folder'),
+        title: const Text(AppStrings.newFolder),
         content: TextField(
           controller: controller,
           autofocus: true,
           decoration: InputDecoration(
-            hintText: 'Folder name',
+            hintText: AppStrings.folderName,
             border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12)),
           ),
@@ -220,14 +221,14 @@ class _DocsScreenState extends State<DocsScreen> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+              child: const Text(AppStrings.cancel)),
           ElevatedButton(
             onPressed: () {
               final name = controller.text.trim();
               if (name.isNotEmpty) service.addFolder(name);
               Navigator.pop(ctx);
             },
-            child: const Text('Create'),
+            child: const Text(AppStrings.create),
           ),
         ],
       ),
@@ -300,7 +301,7 @@ class _DocsScreenState extends State<DocsScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${doc.wordCount} words',
+                  '${doc.wordCount} ${AppStrings.words}',
                   style: const TextStyle(
                       fontSize: 11.5, color: AppColors.textMuted),
                 ),
@@ -328,10 +329,11 @@ class _DocsScreenState extends State<DocsScreen> {
                 size: 44, color: AppColors.primaryBlue),
           ),
           const SizedBox(height: 16),
-          const Text('No documents found',
+          const Text(AppStrings.noDocsFound,
               style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
           const SizedBox(height: 6),
-          const Text('Try a different filter or create a new one',
+          const Text(AppStrings.tryDifferentFilter,
+              textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textMuted)),
         ],
       ),
@@ -362,14 +364,15 @@ class _DocsScreenState extends State<DocsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(height: 14),
-              const Text('Sort by',
+              const Text(AppStrings.sortBy,
                   style:
                       TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
               const SizedBox(height: 8),
-              item('Last modified', _SortBy.updated, Icons.update),
-              item('Date created', _SortBy.created, Icons.calendar_today),
-              item('Name (A–Z)', _SortBy.name, Icons.sort_by_alpha),
-              item('Word count', _SortBy.words, Icons.numbers),
+              item(AppStrings.sortLastModified, _SortBy.updated, Icons.update),
+              item(AppStrings.sortDateCreated, _SortBy.created,
+                  Icons.calendar_today),
+              item(AppStrings.sortName, _SortBy.name, Icons.sort_by_alpha),
+              item(AppStrings.sortWordCount, _SortBy.words, Icons.numbers),
               const SizedBox(height: 8),
             ],
           ),

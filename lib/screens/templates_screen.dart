@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_theme.dart';
+import '../core/strings.dart';
 import '../models/doc_template.dart';
 import '../services/template_repository.dart';
 import '../widgets/gradient_header.dart';
@@ -18,7 +19,7 @@ class TemplatesScreen extends StatelessWidget {
       body: Column(
         children: [
           const GradientHeader(
-            title: 'Templates',
+            title: AppStrings.templates,
             leading: Icon(Icons.dashboard_customize_rounded,
                 color: Colors.white, size: 26),
           ),
@@ -58,7 +59,7 @@ class _TemplateCard extends StatelessWidget {
               initialContentJson:
                   TemplateRepository.deltaToJson(template.delta),
               initialTitle: template.id == 'blank'
-                  ? 'Untitled Document'
+                  ? AppStrings.untitled
                   : template.name,
             ),
           ),

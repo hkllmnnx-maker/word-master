@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 
 import '../models/doc_template.dart';
 
-/// Curated, ready-to-use document templates with pre-filled Quill content.
+/// قوالب مستندات جاهزة للاستخدام مع محتوى عربي مُعبّأ مسبقاً.
 class TemplateRepository {
   static List<DocTemplate> all = [
     DocTemplate(
       id: 'blank',
-      name: 'Blank Document',
-      description: 'Start from a clean page',
+      name: 'مستند فارغ',
+      description: 'ابدأ من صفحة بيضاء',
       icon: Icons.description_outlined,
       gradient: const [Color(0xFF8E9EAB), Color(0xFFEEF2F3)],
       delta: [
@@ -19,28 +19,28 @@ class TemplateRepository {
     ),
     DocTemplate(
       id: 'business_letter',
-      name: 'Business Letter',
-      description: 'Formal letter layout',
+      name: 'خطاب رسمي',
+      description: 'تنسيق خطاب رسمي',
       icon: Icons.mail_outline,
       gradient: const [Color(0xFF2E7CF6), Color(0xFF00C6FF)],
       delta: [
         {
-          'insert': 'Your Company Name',
+          'insert': 'اسم الشركة',
           'attributes': {'bold': true, 'size': 'large'}
         },
         {'insert': '\n'},
-        {'insert': '123 Business Street, City, Country\n'},
+        {'insert': '123 شارع الأعمال، المدينة، الدولة\n'},
         {'insert': '\n'},
-        {'insert': 'Date: '},
+        {'insert': 'التاريخ: '},
         {'insert': '\n\n'},
-        {'insert': 'Dear [Recipient Name],\n\n'},
+        {'insert': 'السيد/السيدة [اسم المستلم] المحترم،\n\n'},
         {
           'insert':
-              'I am writing to you regarding... \n\nThank you for your time and consideration.\n\n'
+              'أكتب إليكم بخصوص... \n\nشكراً لكم على وقتكم واهتمامكم.\n\n'
         },
-        {'insert': 'Sincerely,\n'},
+        {'insert': 'وتفضلوا بقبول فائق الاحترام،\n'},
         {
-          'insert': 'Your Name',
+          'insert': 'اسمك',
           'attributes': {'bold': true}
         },
         {'insert': '\n'},
@@ -48,117 +48,117 @@ class TemplateRepository {
     ),
     DocTemplate(
       id: 'resume',
-      name: 'Resume / CV',
-      description: 'Professional resume',
+      name: 'السيرة الذاتية',
+      description: 'سيرة ذاتية احترافية',
       icon: Icons.badge_outlined,
       gradient: const [Color(0xFF7C4DFF), Color(0xFFB388FF)],
       delta: [
         {
-          'insert': 'FULL NAME',
+          'insert': 'الاسم الكامل',
           'attributes': {'bold': true, 'size': 'huge'}
         },
         {'insert': '\n'},
-        {'insert': 'Job Title • email@example.com • +1 234 567\n\n'},
+        {'insert': 'المسمى الوظيفي • email@example.com • +966 5XX\n\n'},
         {
-          'insert': 'PROFILE',
+          'insert': 'نبذة',
           'attributes': {'bold': true, 'header': 2}
         },
         {'insert': '\n'},
-        {'insert': 'A short professional summary about yourself.\n\n'},
+        {'insert': 'ملخص مهني مختصر عن نفسك.\n\n'},
         {
-          'insert': 'EXPERIENCE',
+          'insert': 'الخبرات',
           'attributes': {'bold': true, 'header': 2}
         },
         {'insert': '\n'},
         {
-          'insert': 'Company — Role (2020 – Present)',
+          'insert': 'الشركة — الدور الوظيفي (2020 – حتى الآن)',
           'attributes': {'bold': true}
         },
         {'insert': '\n'},
         {
-          'insert': 'Key achievement or responsibility',
+          'insert': 'أبرز إنجاز أو مسؤولية',
           'attributes': {'list': 'bullet'}
         },
         {'insert': '\n\n'},
         {
-          'insert': 'EDUCATION',
+          'insert': 'التعليم',
           'attributes': {'bold': true, 'header': 2}
         },
         {'insert': '\n'},
-        {'insert': 'University — Degree (Year)\n'},
+        {'insert': 'الجامعة — الدرجة العلمية (السنة)\n'},
       ],
     ),
     DocTemplate(
       id: 'report',
-      name: 'Project Report',
-      description: 'Structured report',
+      name: 'تقرير مشروع',
+      description: 'تقرير منظّم',
       icon: Icons.assessment_outlined,
       gradient: const [Color(0xFFD81B8C), Color(0xFFFF6CAB)],
       delta: [
         {
-          'insert': 'Project Report',
+          'insert': 'تقرير المشروع',
           'attributes': {'header': 1}
         },
         {'insert': '\n'},
         {
-          'insert': '1. Overview',
+          'insert': '١. نظرة عامة',
           'attributes': {'header': 2}
         },
         {'insert': '\n'},
-        {'insert': 'Describe the project background and goals.\n\n'},
+        {'insert': 'صف خلفية المشروع وأهدافه.\n\n'},
         {
-          'insert': '2. Objectives',
+          'insert': '٢. الأهداف',
           'attributes': {'header': 2}
         },
         {'insert': '\n'},
         {
-          'insert': 'First objective',
+          'insert': 'الهدف الأول',
           'attributes': {'list': 'ordered'}
         },
         {'insert': '\n'},
         {
-          'insert': 'Second objective',
+          'insert': 'الهدف الثاني',
           'attributes': {'list': 'ordered'}
         },
         {'insert': '\n\n'},
         {
-          'insert': '3. Conclusion',
+          'insert': '٣. الخاتمة',
           'attributes': {'header': 2}
         },
         {'insert': '\n'},
-        {'insert': 'Summarize the outcomes here.\n'},
+        {'insert': 'لخّص النتائج هنا.\n'},
       ],
     ),
     DocTemplate(
       id: 'meeting_notes',
-      name: 'Meeting Notes',
-      description: 'Agenda & action items',
+      name: 'محضر اجتماع',
+      description: 'جدول الأعمال والمهام',
       icon: Icons.event_note_outlined,
       gradient: const [Color(0xFF11998E), Color(0xFF38EF7D)],
       delta: [
         {
-          'insert': 'Meeting Notes',
+          'insert': 'محضر الاجتماع',
           'attributes': {'header': 1}
         },
         {'insert': '\n'},
-        {'insert': 'Date: _____   Attendees: _____\n\n'},
+        {'insert': 'التاريخ: _____   الحضور: _____\n\n'},
         {
-          'insert': 'Agenda',
+          'insert': 'جدول الأعمال',
           'attributes': {'header': 2}
         },
         {'insert': '\n'},
         {
-          'insert': 'Topic one',
+          'insert': 'الموضوع الأول',
           'attributes': {'list': 'bullet'}
         },
         {'insert': '\n\n'},
         {
-          'insert': 'Action Items',
+          'insert': 'المهام',
           'attributes': {'header': 2}
         },
         {'insert': '\n'},
         {
-          'insert': 'Task — Owner — Due date',
+          'insert': 'المهمة — المسؤول — تاريخ الاستحقاق',
           'attributes': {'list': 'unchecked'}
         },
         {'insert': '\n'},
@@ -166,29 +166,29 @@ class TemplateRepository {
     ),
     DocTemplate(
       id: 'invoice',
-      name: 'Invoice',
-      description: 'Billing document',
+      name: 'فاتورة',
+      description: 'مستند فوترة',
       icon: Icons.receipt_long_outlined,
       gradient: const [Color(0xFFF7971E), Color(0xFFFFD200)],
       delta: [
         {
-          'insert': 'INVOICE',
+          'insert': 'فاتورة',
           'attributes': {'header': 1}
         },
         {'insert': '\n'},
-        {'insert': 'Invoice #: 0001    Date: _____\n\n'},
+        {'insert': 'رقم الفاتورة: 0001    التاريخ: _____\n\n'},
         {
-          'insert': 'Bill To:',
+          'insert': 'فاتورة إلى:',
           'attributes': {'bold': true}
         },
-        {'insert': '\nClient Name\nClient Address\n\n'},
+        {'insert': '\nاسم العميل\nعنوان العميل\n\n'},
         {
-          'insert': 'Description        Qty     Price     Total',
+          'insert': 'الوصف        الكمية     السعر     الإجمالي',
           'attributes': {'bold': true}
         },
-        {'insert': '\nItem 1             1       \$100      \$100\n\n'},
+        {'insert': '\nالبند الأول        1       100       100\n\n'},
         {
-          'insert': 'Total: \$100',
+          'insert': 'الإجمالي: 100',
           'attributes': {'bold': true, 'size': 'large'}
         },
         {'insert': '\n'},
@@ -196,60 +196,60 @@ class TemplateRepository {
     ),
     DocTemplate(
       id: 'essay',
-      name: 'Academic Essay',
-      description: 'Essay structure',
+      name: 'مقال أكاديمي',
+      description: 'هيكل المقال',
       icon: Icons.school_outlined,
       gradient: const [Color(0xFF614385), Color(0xFF516395)],
       delta: [
         {
-          'insert': 'Essay Title',
+          'insert': 'عنوان المقال',
           'attributes': {'header': 1}
         },
         {'insert': '\n'},
         {
-          'insert': 'Introduction',
+          'insert': 'المقدمة',
           'attributes': {'header': 2}
         },
         {'insert': '\n'},
-        {'insert': 'Introduce your thesis statement.\n\n'},
+        {'insert': 'قدّم فكرتك الرئيسية.\n\n'},
         {
-          'insert': 'Body',
+          'insert': 'العرض',
           'attributes': {'header': 2}
         },
         {'insert': '\n'},
-        {'insert': 'Develop your arguments with evidence.\n\n'},
+        {'insert': 'طوّر حججك بالأدلة والشواهد.\n\n'},
         {
-          'insert': 'Conclusion',
+          'insert': 'الخاتمة',
           'attributes': {'header': 2}
         },
         {'insert': '\n'},
-        {'insert': 'Restate and conclude.\n'},
+        {'insert': 'أعد صياغة الفكرة واختتم المقال.\n'},
       ],
     ),
     DocTemplate(
       id: 'todo',
-      name: 'To-Do List',
-      description: 'Checklist layout',
+      name: 'قائمة مهام',
+      description: 'قائمة تحقّق',
       icon: Icons.checklist_outlined,
       gradient: const [Color(0xFFFF512F), Color(0xFFDD2476)],
       delta: [
         {
-          'insert': 'My To-Do List',
+          'insert': 'قائمة مهامي',
           'attributes': {'header': 1}
         },
         {'insert': '\n'},
         {
-          'insert': 'First task',
+          'insert': 'المهمة الأولى',
           'attributes': {'list': 'unchecked'}
         },
         {'insert': '\n'},
         {
-          'insert': 'Second task',
+          'insert': 'المهمة الثانية',
           'attributes': {'list': 'unchecked'}
         },
         {'insert': '\n'},
         {
-          'insert': 'Third task',
+          'insert': 'المهمة الثالثة',
           'attributes': {'list': 'unchecked'}
         },
         {'insert': '\n'},

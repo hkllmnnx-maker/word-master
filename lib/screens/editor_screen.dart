@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../core/app_theme.dart';
+import '../core/strings.dart';
 import '../core/utils.dart';
 import '../services/document_service.dart';
 import '../services/settings_service.dart';
@@ -37,7 +38,7 @@ class _EditorScreenState extends State<EditorScreen> {
   final ScrollController _scrollController = ScrollController();
 
   String? _docId;
-  String _title = 'Untitled Document';
+  String _title = AppStrings.untitled;
   String _syncStatus = 'synced';
   Timer? _autosaveTimer;
   bool _dirty = false;
@@ -64,7 +65,7 @@ class _EditorScreenState extends State<EditorScreen> {
         document = Document();
       }
     } else if (widget.initialContentJson != null) {
-      _title = widget.initialTitle ?? 'Untitled Document';
+      _title = widget.initialTitle ?? AppStrings.untitled;
       document = _decode(widget.initialContentJson!);
     } else {
       document = Document();
@@ -131,7 +132,7 @@ class _EditorScreenState extends State<EditorScreen> {
     if (_docId != null &&
         (_lastVersionAt == null ||
             now.difference(_lastVersionAt!).inSeconds > 45)) {
-      await service.saveVersion(_docId!, label: 'Auto-save');
+      await service.saveVersion(_docId!, label: AppStrings.autoSave);
       _lastVersionAt = now;
     }
     if (mounted) {
@@ -139,7 +140,7 @@ class _EditorScreenState extends State<EditorScreen> {
         _dirty = false;
         _syncStatus = 'synced';
       });
-      if (!silent) AppSnack.show(context, 'Document saved');
+      if (!silent) AppSnack.show(context, AppStrings.documentSaved);
     }
   }
 
@@ -206,7 +207,7 @@ class _EditorScreenState extends State<EditorScreen> {
                       focusNode: _focusNode,
                       scrollController: _scrollController,
                       config: QuillEditorConfig(
-                        placeholder: 'Start writing your document…',
+                        placeholder: AppStrings.startWriting,
                         padding: const EdgeInsets.only(bottom: 80),
                         customStyles: DefaultStyles(
                           paragraph: DefaultTextBlockStyle(
@@ -258,7 +259,8 @@ class _EditorScreenState extends State<EditorScreen> {
                     await _onWillPop();
                     if (mounted) navigator.pop();
                   },
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: const Icon(Icons.arrow_back_ios_new,
+                      color: Colors.white),
                 ),
                 Expanded(
                   child: GestureDetector(
@@ -279,7 +281,7 @@ class _EditorScreenState extends State<EditorScreen> {
                         Row(
                           children: [
                             Text(
-                              'Tap to rename',
+                              AppStrings.tapToRename,
                               style: TextStyle(
                                 color:
                                     Colors.white.withValues(alpha: 0.8),
@@ -329,12 +331,13 @@ class _EditorScreenState extends State<EditorScreen> {
       ),
       child: Row(
         children: [
-          _infoCell('Document', _title, flex: 3),
+          _infoCell(AppStrings.document, _title, flex: 3),
           _divider(),
-          _infoCell('$_wordCount', 'Words', flex: 2),
+          _infoCell('$_wordCount', AppStrings.wordsLabel, flex: 2),
           _divider(),
           _infoCell(
-              _syncStatus == 'syncing' ? 'Saving…' : 'Synced', 'Cloud',
+              _syncStatus == 'syncing' ? '${AppStrings.save}…' : AppStrings.synced,
+              AppStrings.cloud,
               flex: 2,
               icon: _syncStatus == 'syncing'
                   ? Icons.sync
@@ -397,20 +400,20 @@ class _EditorScreenState extends State<EditorScreen> {
       builder: (ctx) => AlertDialog(
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('Rename document'),
+        title: const Text(AppStrings.renameDoc),
         content: TextField(
           controller: controller,
           autofocus: true,
           decoration: InputDecoration(
             border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12)),
-            labelText: 'Title',
+            labelText: AppStrings.title,
           ),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+              child: const Text(AppStrings.cancel)),
           ElevatedButton(
             onPressed: () {
               final name = controller.text.trim();
@@ -420,7 +423,7 @@ class _EditorScreenState extends State<EditorScreen> {
               }
               Navigator.pop(ctx);
             },
-            child: const Text('Save'),
+            child: const Text(AppStrings.save),
           ),
         ],
       ),
@@ -442,12 +445,12 @@ class _EditorScreenState extends State<EditorScreen> {
       builder: (ctx) => AlertDialog(
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('Insert image URL'),
+        title: const Text(AppStrings.insertImageUrl),
         content: TextField(
           controller: controller,
           autofocus: true,
           decoration: InputDecoration(
-            hintText: 'https://… (image link)',
+            hintText: AppStrings.imageLinkHint,
             border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12)),
           ),
@@ -455,7 +458,7 @@ class _EditorScreenState extends State<EditorScreen> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+              child: const Text(AppStrings.cancel)),
           ElevatedButton(
             onPressed: () {
               final url = controller.text.trim();
@@ -471,7 +474,7 @@ class _EditorScreenState extends State<EditorScreen> {
               }
               Navigator.pop(ctx);
             },
-            child: const Text('Insert'),
+            child: const Text(AppStrings.insert),
           ),
         ],
       ),
@@ -487,7 +490,7 @@ class _EditorScreenState extends State<EditorScreen> {
         '| Cell | Cell | Cell |\n';
     _controller.replaceText(
         index, 0, table, TextSelection.collapsed(offset: index + table.length));
-    AppSnack.show(context, 'Table inserted');
+    AppSnack.show(context, AppStrings.tableInserted);
   }
 
   void _showMore() {
@@ -514,7 +517,7 @@ class _EditorScreenState extends State<EditorScreen> {
               const SizedBox(height: 8),
               ListTile(
                 leading: const Icon(Icons.font_download_outlined),
-                title: const Text('Font family'),
+                title: const Text(AppStrings.fontFamily),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickFontFamily();
@@ -522,7 +525,7 @@ class _EditorScreenState extends State<EditorScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.format_size),
-                title: const Text('Font size'),
+                title: const Text(AppStrings.fontSize),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickFontSize();
@@ -530,8 +533,8 @@ class _EditorScreenState extends State<EditorScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.bar_chart_rounded),
-                title: const Text('Statistics'),
-                subtitle: Text('$_wordCount words'),
+                title: const Text(AppStrings.statistics),
+                subtitle: Text('$_wordCount ${AppStrings.words}'),
                 onTap: () {
                   Navigator.pop(ctx);
                   _showStats();
@@ -539,7 +542,7 @@ class _EditorScreenState extends State<EditorScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.search),
-                title: const Text('Find & Replace'),
+                title: const Text(AppStrings.findReplace),
                 onTap: () {
                   Navigator.pop(ctx);
                   _findReplace();
@@ -547,7 +550,7 @@ class _EditorScreenState extends State<EditorScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.ios_share),
-                title: const Text('Export'),
+                title: const Text(AppStrings.export),
                 onTap: () async {
                   Navigator.pop(ctx);
                   await _save(silent: true);
@@ -559,7 +562,7 @@ class _EditorScreenState extends State<EditorScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.share_outlined),
-                title: const Text('Quick share'),
+                title: const Text(AppStrings.quickShare),
                 onTap: () {
                   Navigator.pop(ctx);
                   _share();
@@ -567,7 +570,7 @@ class _EditorScreenState extends State<EditorScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.cleaning_services_outlined),
-                title: const Text('Clear formatting'),
+                title: const Text(AppStrings.clearFormatting),
                 onTap: () {
                   final sel = _controller.selection;
                   if (!sel.isCollapsed) {
@@ -583,7 +586,7 @@ class _EditorScreenState extends State<EditorScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.save_alt),
-                title: const Text('Save now'),
+                title: const Text(AppStrings.saveNow),
                 onTap: () {
                   Navigator.pop(ctx);
                   _save();
@@ -598,13 +601,14 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   void _pickFontFamily() {
-    const fonts = [
-      'Sans Serif',
-      'Serif',
-      'Monospace',
-      'Inter',
-      'Roboto',
-      'Georgia',
+    // (الاسم المعروض، قيمة الخط)
+    const fonts = <MapEntry<String, String>>[
+      MapEntry(AppStrings.fontSansSerif, 'Sans Serif'),
+      MapEntry(AppStrings.fontSerif, 'Serif'),
+      MapEntry(AppStrings.fontMonospace, 'Monospace'),
+      MapEntry('Cairo', 'Cairo'),
+      MapEntry('Tajawal', 'Tajawal'),
+      MapEntry('Amiri', 'Amiri'),
     ];
     showModalBottomSheet(
       context: context,
@@ -617,15 +621,17 @@ class _EditorScreenState extends State<EditorScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 14),
-            const Text('Font family',
+            const Text(AppStrings.fontFamily,
                 style:
                     TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
             const SizedBox(height: 8),
             ...fonts.map((f) => ListTile(
-                  title: Text(f),
+                  title: Text(f.key),
                   onTap: () {
                     _controller.formatSelection(
-                        f == 'Sans Serif' ? Attribute.clone(Attribute.font, null) : FontAttribute(f));
+                        f.value == 'Sans Serif'
+                            ? Attribute.clone(Attribute.font, null)
+                            : FontAttribute(f.value));
                     Navigator.pop(ctx);
                   },
                 )),
@@ -651,7 +657,7 @@ class _EditorScreenState extends State<EditorScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Font size',
+              const Text(AppStrings.fontSize,
                   style:
                       TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
               const SizedBox(height: 16),
@@ -665,7 +671,7 @@ class _EditorScreenState extends State<EditorScreen> {
                           Attribute.clone(Attribute.size, null));
                       Navigator.pop(ctx);
                     },
-                    child: _sizeChip('Default'),
+                    child: _sizeChip(AppStrings.defaultLabel),
                   ),
                   ...sizes.map((s) => GestureDetector(
                         onTap: () {
@@ -722,21 +728,21 @@ class _EditorScreenState extends State<EditorScreen> {
       builder: (ctx) => AlertDialog(
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('Document statistics'),
+        title: const Text(AppStrings.docStatistics),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            row('Words', '$words'),
-            row('Characters (no spaces)', '$chars'),
-            row('Characters (with spaces)', '$charsWithSpaces'),
-            row('Paragraphs', '$paragraphs'),
-            row('Reading time', '~$readMin min'),
+            row(AppStrings.wordsLabel, '$words'),
+            row(AppStrings.charsNoSpaces, '$chars'),
+            row(AppStrings.charsWithSpaces, '$charsWithSpaces'),
+            row(AppStrings.paragraphs, '$paragraphs'),
+            row(AppStrings.readingTime, '~$readMin ${AppStrings.minutes}'),
           ],
         ),
         actions: [
           ElevatedButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Close')),
+              child: const Text(AppStrings.close)),
         ],
       ),
     );
@@ -763,14 +769,14 @@ class _EditorScreenState extends State<EditorScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Find & Replace',
+                const Text(AppStrings.findReplace,
                     style: TextStyle(
                         fontWeight: FontWeight.w700, fontSize: 16)),
                 const SizedBox(height: 16),
                 TextField(
                   controller: findCtrl,
                   decoration: InputDecoration(
-                    labelText: 'Find',
+                    labelText: AppStrings.find,
                     prefixIcon: const Icon(Icons.search),
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12)),
@@ -780,7 +786,7 @@ class _EditorScreenState extends State<EditorScreen> {
                 TextField(
                   controller: replaceCtrl,
                   decoration: InputDecoration(
-                    labelText: 'Replace with',
+                    labelText: AppStrings.replaceWith,
                     prefixIcon: const Icon(Icons.find_replace),
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12)),
@@ -795,10 +801,13 @@ class _EditorScreenState extends State<EditorScreen> {
                           final n = _replaceAll(
                               findCtrl.text, replaceCtrl.text);
                           Navigator.pop(ctx);
-                          AppSnack.show(context,
-                              n > 0 ? 'Replaced $n match(es)' : 'No matches found');
+                          AppSnack.show(
+                              context,
+                              n > 0
+                                  ? '${AppStrings.replacedMatches} $n'
+                                  : AppStrings.noMatchesFound);
                         },
-                        child: const Text('Replace all'),
+                        child: const Text(AppStrings.replaceAll),
                       ),
                     ),
                   ],

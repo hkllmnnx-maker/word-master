@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/strings.dart';
+
 /// App-wide preferences (theme mode, font size, autosave) persisted with
 /// shared_preferences.
 class SettingsService extends ChangeNotifier {
@@ -14,7 +16,7 @@ class SettingsService extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.light;
   double _editorFontScale = 1.0;
   bool _autosave = true;
-  String _userName = 'Word Master User';
+  String _userName = AppStrings.defaultUserName;
 
   ThemeMode get themeMode => _themeMode;
   double get editorFontScale => _editorFontScale;
@@ -31,7 +33,7 @@ class SettingsService extends ChangeNotifier {
     };
     _editorFontScale = _prefs.getDouble(_kEditorFontScale) ?? 1.0;
     _autosave = _prefs.getBool(_kAutosave) ?? true;
-    _userName = _prefs.getString(_kUserName) ?? 'Word Master User';
+    _userName = _prefs.getString(_kUserName) ?? AppStrings.defaultUserName;
     notifyListeners();
   }
 

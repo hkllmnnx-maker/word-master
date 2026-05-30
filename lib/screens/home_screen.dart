@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/app_theme.dart';
+import '../core/strings.dart';
 import '../core/utils.dart';
 import '../models/document_model.dart';
 import '../services/document_service.dart';
@@ -26,7 +27,7 @@ class HomeScreen extends StatelessWidget {
       body: Column(
         children: [
           GradientHeader(
-            title: 'Word Master',
+            title: AppStrings.homeTitle,
             actions: [
               _circleBtn(Icons.search, () => _openSearch(context)),
             ],
@@ -34,21 +35,21 @@ class HomeScreen extends StatelessWidget {
               items: [
                 HeaderInfoItem(
                   value: Formatters.compactNumber(service.totalDocuments),
-                  label: 'Documents',
+                  label: AppStrings.documents,
                 ),
                 HeaderInfoItem(
                   value: Formatters.compactNumber(service.totalWords),
-                  label: 'Total Words',
+                  label: AppStrings.totalWords,
                 ),
                 HeaderInfoItem(
                   icon: Icons.star_rounded,
                   value: '${service.favoriteDocuments.length}',
-                  label: 'Favorites',
+                  label: AppStrings.favorites,
                 ),
                 const HeaderInfoItem(
                   icon: Icons.cloud_done,
-                  value: 'Synced',
-                  label: 'Cloud',
+                  value: AppStrings.synced,
+                  label: AppStrings.cloud,
                 ),
               ],
             ),
@@ -63,7 +64,7 @@ class HomeScreen extends StatelessWidget {
                   _quickActions(context),
                   const SizedBox(height: 24),
                   if (featured != null) ...[
-                    _sectionTitle('Continue Writing'),
+                    _sectionTitle(AppStrings.continueWriting),
                     const SizedBox(height: 12),
                     _featuredCard(context, featured),
                     const SizedBox(height: 24),
@@ -71,11 +72,11 @@ class HomeScreen extends StatelessWidget {
                   if (recent.isNotEmpty) ...[
                     Row(
                       children: [
-                        _sectionTitle('Recent'),
+                        _sectionTitle(AppStrings.recent),
                         const Spacer(),
                         TextButton(
                           onPressed: () => onOpenTab(1),
-                          child: const Text('See all'),
+                          child: const Text(AppStrings.seeAll),
                         ),
                       ],
                     ),
@@ -93,7 +94,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                   ],
-                  _sectionTitle('All Documents'),
+                  _sectionTitle(AppStrings.allDocuments),
                   const SizedBox(height: 12),
                   if (docs.isEmpty)
                     _emptyState(context)
@@ -133,16 +134,17 @@ class HomeScreen extends StatelessWidget {
 
   Widget _quickActions(BuildContext context) {
     final items = [
-      (_QA('New Doc', Icons.note_add_rounded, AppColors.gradientStart, () {
+      (_QA(AppStrings.quickNewDoc, Icons.note_add_rounded,
+          AppColors.gradientStart, () {
         Navigator.push(context,
             MaterialPageRoute(builder: (_) => const EditorScreen()));
       })),
-      (_QA('Templates', Icons.dashboard_customize_rounded,
+      (_QA(AppStrings.quickTemplates, Icons.dashboard_customize_rounded,
           AppColors.gradientMid, () => onOpenTab(3))),
-      (_QA('My Docs', Icons.folder_rounded, AppColors.gradientEnd,
+      (_QA(AppStrings.quickMyDocs, Icons.folder_rounded, AppColors.gradientEnd,
           () => onOpenTab(1))),
-      (_QA('Settings', Icons.tune_rounded, const Color(0xFF22C55E),
-          () => onOpenTab(4))),
+      (_QA(AppStrings.quickSettings, Icons.tune_rounded,
+          const Color(0xFF22C55E), () => onOpenTab(4))),
     ];
     return Row(
       children: items
@@ -224,7 +226,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${doc.wordCount} words · ${Formatters.relativeDate(doc.updatedAt)}',
+                    '${doc.wordCount} ${AppStrings.words} · ${Formatters.relativeDate(doc.updatedAt)}',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.85),
                       fontSize: 12.5,
@@ -270,12 +272,12 @@ class HomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           const Text(
-            'No documents yet',
+            AppStrings.noDocsYet,
             style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
           ),
           const SizedBox(height: 6),
           const Text(
-            'Tap the + button to create\nyour first document',
+            AppStrings.noDocsHint,
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.textMuted, height: 1.4),
           ),
@@ -284,7 +286,7 @@ class HomeScreen extends StatelessWidget {
             onPressed: () => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const EditorScreen())),
             icon: const Icon(Icons.add),
-            label: const Text('Create Document'),
+            label: const Text(AppStrings.createDocument),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryBlue,
               foregroundColor: Colors.white,
@@ -351,6 +353,9 @@ class _QA {
 
 class _DocSearchDelegate extends SearchDelegate {
   @override
+  String? get searchFieldLabel => AppStrings.searchDocuments;
+
+  @override
   List<Widget> buildActions(BuildContext context) => [
         IconButton(
           onPressed: () => query = '',
@@ -375,7 +380,7 @@ class _DocSearchDelegate extends SearchDelegate {
     final results = service.search(query);
     if (results.isEmpty) {
       return const Center(
-        child: Text('No matching documents',
+        child: Text(AppStrings.noMatchingDocs,
             style: TextStyle(color: AppColors.textMuted)),
       );
     }

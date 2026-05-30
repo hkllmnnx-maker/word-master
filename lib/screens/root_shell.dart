@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_theme.dart';
+import '../core/strings.dart';
 import 'home_screen.dart';
 import 'docs_screen.dart';
 import 'templates_screen.dart';
@@ -86,11 +87,12 @@ class _BottomBar extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _navItem(Icons.home_rounded, 'Home', 0),
-              _navItem(Icons.folder_copy_outlined, 'Docs', 1),
+              _navItem(Icons.home_rounded, AppStrings.navHome, 0),
+              _navItem(Icons.folder_copy_outlined, AppStrings.navDocs, 1),
               _createItem(),
-              _navItem(Icons.dashboard_customize_outlined, 'Templates', 3),
-              _navItem(Icons.settings_outlined, 'Settings', 4),
+              _navItem(Icons.dashboard_customize_outlined,
+                  AppStrings.navTemplates, 3),
+              _navItem(Icons.settings_outlined, AppStrings.navSettings, 4),
             ],
           ),
         ),
@@ -155,7 +157,7 @@ class _BottomBar extends StatelessWidget {
             ),
             const SizedBox(height: 3),
             const Text(
-              'Create',
+              AppStrings.navCreate,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,

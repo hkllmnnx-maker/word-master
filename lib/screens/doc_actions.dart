@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../core/app_theme.dart';
+import '../core/strings.dart';
 import '../core/utils.dart';
 import '../models/document_model.dart';
 import '../services/document_service.dart';
@@ -52,10 +53,10 @@ class DocActions {
                   title: Text(doc.title,
                       maxLines: 1, overflow: TextOverflow.ellipsis),
                   subtitle: Text(
-                      '${doc.wordCount} words · ${Formatters.relativeDate(doc.updatedAt)}'),
+                      '${doc.wordCount} ${AppStrings.words} · ${Formatters.relativeDate(doc.updatedAt)}'),
                 ),
                 const Divider(height: 1),
-                _tile(ctx, Icons.edit_outlined, 'Open & Edit', () {
+                _tile(ctx, Icons.edit_outlined, AppStrings.openEdit, () {
                   Navigator.pop(ctx);
                   Navigator.push(
                     context,
@@ -68,7 +69,7 @@ class DocActions {
                   doc.isPinned
                       ? Icons.push_pin
                       : Icons.push_pin_outlined,
-                  doc.isPinned ? 'Unpin' : 'Pin to top',
+                  doc.isPinned ? AppStrings.unpin : AppStrings.pinToTop,
                   () {
                     service.togglePin(doc.id);
                     Navigator.pop(ctx);
@@ -78,26 +79,28 @@ class DocActions {
                   ctx,
                   doc.isFavorite ? Icons.star : Icons.star_outline,
                   doc.isFavorite
-                      ? 'Remove from Favorites'
-                      : 'Add to Favorites',
+                      ? AppStrings.removeFromFavorites
+                      : AppStrings.addToFavorites,
                   () {
                     service.toggleFavorite(doc.id);
                     Navigator.pop(ctx);
                   },
                 ),
-                _tile(ctx, Icons.drive_file_rename_outline, 'Rename', () {
+                _tile(ctx, Icons.drive_file_rename_outline, AppStrings.rename,
+                    () {
                   Navigator.pop(ctx);
                   _renameDialog(context, doc);
                 }),
-                _tile(ctx, Icons.folder_outlined, 'Move to folder', () {
+                _tile(ctx, Icons.folder_outlined, AppStrings.moveToFolder,
+                    () {
                   Navigator.pop(ctx);
                   _moveFolderSheet(context, doc);
                 }),
-                _tile(ctx, Icons.label_outline, 'Color Tag', () {
+                _tile(ctx, Icons.label_outline, AppStrings.colorTag, () {
                   Navigator.pop(ctx);
                   _colorTagSheet(context, doc);
                 }),
-                _tile(ctx, Icons.history, 'Version history', () {
+                _tile(ctx, Icons.history, AppStrings.versionHistory, () {
                   Navigator.pop(ctx);
                   Navigator.push(
                     context,
@@ -106,21 +109,22 @@ class DocActions {
                             VersionHistoryScreen(documentId: doc.id)),
                   );
                 }),
-                _tile(ctx, Icons.ios_share, 'Export', () {
+                _tile(ctx, Icons.ios_share, AppStrings.export, () {
                   Navigator.pop(ctx);
                   showExportSheet(context, doc);
                 }),
-                _tile(ctx, Icons.copy_all_outlined, 'Duplicate', () async {
+                _tile(ctx, Icons.copy_all_outlined, AppStrings.duplicate,
+                    () async {
                   await service.duplicateDocument(doc.id);
                   if (ctx.mounted) Navigator.pop(ctx);
                   if (context.mounted) {
-                    AppSnack.show(context, 'Document duplicated');
+                    AppSnack.show(context, AppStrings.documentDuplicated);
                   }
                 }),
-                _tile(ctx, Icons.delete_outline, 'Move to Trash', () {
+                _tile(ctx, Icons.delete_outline, AppStrings.moveToTrash, () {
                   service.moveToTrash(doc.id);
                   Navigator.pop(ctx);
-                  AppSnack.show(context, 'Moved to Trash');
+                  AppSnack.show(context, AppStrings.movedToTrash);
                 }, danger: true),
                 const SizedBox(height: 8),
               ],
@@ -145,10 +149,10 @@ class DocActions {
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 14),
-            const Text('Export document',
+            const Text(AppStrings.exportDocument,
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
             const SizedBox(height: 8),
-            _tile(ctx, Icons.picture_as_pdf, 'Export / Print as PDF',
+            _tile(ctx, Icons.picture_as_pdf, AppStrings.exportPdf,
                 () async {
               Navigator.pop(ctx);
               try {
@@ -158,17 +162,18 @@ class DocActions {
                     onLayout: (_) async => bytes, name: doc.title);
               } catch (e) {
                 if (context.mounted) {
-                  AppSnack.show(context, 'PDF export failed', error: true);
+                  AppSnack.show(context, AppStrings.pdfExportFailed,
+                      error: true);
                 }
               }
             }),
-            _tile(ctx, Icons.code, 'Share as HTML', () async {
+            _tile(ctx, Icons.code, AppStrings.shareHtml, () async {
               Navigator.pop(ctx);
               final html =
                   ExportService.toHtml(doc.contentJson, title: doc.title);
               await Share.share(html, subject: '${doc.title}.html');
             }),
-            _tile(ctx, Icons.text_snippet_outlined, 'Share as Text',
+            _tile(ctx, Icons.text_snippet_outlined, AppStrings.shareText,
                 () async {
               Navigator.pop(ctx);
               final text = ExportService.toPlainText(doc.contentJson);
@@ -208,20 +213,20 @@ class DocActions {
       builder: (ctx) => AlertDialog(
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('Rename document'),
+        title: const Text(AppStrings.renameDoc),
         content: TextField(
           controller: controller,
           autofocus: true,
           decoration: InputDecoration(
             border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12)),
-            labelText: 'Title',
+            labelText: AppStrings.title,
           ),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+              child: const Text(AppStrings.cancel)),
           ElevatedButton(
             onPressed: () {
               final name = controller.text.trim();
@@ -230,7 +235,7 @@ class DocActions {
               }
               Navigator.pop(ctx);
             },
-            child: const Text('Save'),
+            child: const Text(AppStrings.save),
           ),
         ],
       ),
@@ -250,12 +255,12 @@ class DocActions {
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 14),
-            const Text('Move to folder',
+            const Text(AppStrings.moveToFolder,
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
             const SizedBox(height: 8),
             ListTile(
               leading: const Icon(Icons.folder_off_outlined),
-              title: const Text('No folder'),
+              title: const Text(AppStrings.noFolder),
               trailing: doc.folder.isEmpty
                   ? const Icon(Icons.check, color: AppColors.primaryBlue)
                   : null,
@@ -279,7 +284,7 @@ class DocActions {
             ListTile(
               leading: const Icon(Icons.create_new_folder_outlined,
                   color: AppColors.primaryBlue),
-              title: const Text('New folder',
+              title: const Text(AppStrings.newFolder,
                   style: TextStyle(color: AppColors.primaryBlue)),
               onTap: () {
                 Navigator.pop(ctx);
@@ -301,12 +306,12 @@ class DocActions {
       builder: (ctx) => AlertDialog(
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('New folder'),
+        title: const Text(AppStrings.newFolder),
         content: TextField(
           controller: controller,
           autofocus: true,
           decoration: InputDecoration(
-            hintText: 'Folder name',
+            hintText: AppStrings.folderName,
             border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12)),
           ),
@@ -314,7 +319,7 @@ class DocActions {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+              child: const Text(AppStrings.cancel)),
           ElevatedButton(
             onPressed: () async {
               final name = controller.text.trim();
@@ -324,7 +329,7 @@ class DocActions {
               }
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text('Create'),
+            child: const Text(AppStrings.create),
           ),
         ],
       ),
@@ -346,7 +351,7 @@ class DocActions {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Choose a color tag',
+              const Text(AppStrings.chooseColorTag,
                   style: TextStyle(
                       fontWeight: FontWeight.w700, fontSize: 16)),
               const SizedBox(height: 18),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/app_theme.dart';
+import '../core/strings.dart';
 import '../core/utils.dart';
 import '../services/document_service.dart';
 import '../widgets/gradient_header.dart';
@@ -19,16 +20,17 @@ class TrashScreen extends StatelessWidget {
       body: Column(
         children: [
           GradientHeader(
-            title: 'Trash',
+            title: AppStrings.trash,
             leading: GestureDetector(
               onTap: () => Navigator.pop(context),
-              child: const Icon(Icons.arrow_back, color: Colors.white),
+              child: const Icon(Icons.arrow_back_ios_new,
+                  color: Colors.white),
             ),
             actions: [
               if (docs.isNotEmpty)
                 TextButton(
                   onPressed: () => _confirmEmpty(context, service),
-                  child: const Text('Empty',
+                  child: const Text(AppStrings.empty,
                       style: TextStyle(color: Colors.white)),
                 ),
             ],
@@ -76,7 +78,7 @@ class TrashScreen extends StatelessWidget {
                                           fontWeight: FontWeight.w700)),
                                   const SizedBox(height: 3),
                                   Text(
-                                    'Deleted ${Formatters.relativeDate(doc.trashedAt ?? doc.updatedAt)}',
+                                    '${AppStrings.deletedAt} ${Formatters.relativeDate(doc.trashedAt ?? doc.updatedAt)}',
                                     style: const TextStyle(
                                         fontSize: 12,
                                         color: AppColors.textMuted),
@@ -87,18 +89,18 @@ class TrashScreen extends StatelessWidget {
                             IconButton(
                               onPressed: () {
                                 service.restoreFromTrash(doc.id);
-                                AppSnack.show(context, 'Restored');
+                                AppSnack.show(context, AppStrings.restored);
                               },
                               icon: const Icon(Icons.restore,
                                   color: AppColors.primaryBlue),
-                              tooltip: 'Restore',
+                              tooltip: AppStrings.restore,
                             ),
                             IconButton(
                               onPressed: () =>
                                   _confirmDelete(context, service, doc.id),
                               icon: const Icon(Icons.delete_forever,
                                   color: AppColors.danger),
-                              tooltip: 'Delete forever',
+                              tooltip: AppStrings.deleteForever,
                             ),
                           ],
                         ),
@@ -127,10 +129,10 @@ class TrashScreen extends StatelessWidget {
                 size: 44, color: AppColors.primaryBlue),
           ),
           const SizedBox(height: 16),
-          const Text('Trash is empty',
+          const Text(AppStrings.trashEmpty,
               style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
           const SizedBox(height: 6),
-          const Text('Deleted documents will appear here',
+          const Text(AppStrings.deletedDocsHere,
               style: TextStyle(color: AppColors.textMuted)),
         ],
       ),
@@ -144,12 +146,12 @@ class TrashScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('Delete forever?'),
-        content: const Text('This cannot be undone.'),
+        title: const Text(AppStrings.deleteForever),
+        content: const Text(AppStrings.cannotUndo),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+              child: const Text(AppStrings.cancel)),
           ElevatedButton(
             style:
                 ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
@@ -157,7 +159,7 @@ class TrashScreen extends StatelessWidget {
               service.deleteDocument(id);
               Navigator.pop(ctx);
             },
-            child: const Text('Delete'),
+            child: const Text(AppStrings.delete),
           ),
         ],
       ),
@@ -170,13 +172,12 @@ class TrashScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('Empty trash?'),
-        content: const Text(
-            'All documents in the trash will be permanently deleted.'),
+        title: const Text(AppStrings.emptyTrash),
+        content: const Text(AppStrings.emptyTrashMsg),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+              child: const Text(AppStrings.cancel)),
           ElevatedButton(
             style:
                 ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
@@ -184,7 +185,7 @@ class TrashScreen extends StatelessWidget {
               service.emptyTrash();
               Navigator.pop(ctx);
             },
-            child: const Text('Empty trash'),
+            child: const Text(AppStrings.empty),
           ),
         ],
       ),

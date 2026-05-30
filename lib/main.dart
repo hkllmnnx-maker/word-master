@@ -3,9 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
 import 'core/app_theme.dart';
+import 'core/strings.dart';
 import 'models/document_model.dart';
 import 'services/document_service.dart';
 import 'services/settings_service.dart';
@@ -13,6 +15,8 @@ import 'screens/root_shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await initializeDateFormatting('ar', null);
 
   await Hive.initFlutter();
   Hive.registerAdapter(DocumentModelAdapter());
@@ -49,11 +53,12 @@ class WordMasterApp extends StatelessWidget {
     );
 
     return MaterialApp(
-      title: 'Word Master',
+      title: AppStrings.appName,
       debugShowCheckedModeBanner: false,
       themeMode: settings.themeMode,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
+      locale: const Locale('ar'),
       localizationsDelegates: const [
         FlutterQuillLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -61,9 +66,16 @@ class WordMasterApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [
-        Locale('en'),
         Locale('ar'),
+        Locale('en'),
       ],
+      builder: (context, child) {
+        // فرض اتجاه الكتابة من اليمين لليسار على كامل التطبيق.
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: child!,
+        );
+      },
       home: const RootShell(),
     );
   }

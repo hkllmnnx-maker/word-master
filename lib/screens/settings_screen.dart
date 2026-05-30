@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/app_theme.dart';
+import '../core/strings.dart';
 import '../core/utils.dart';
 import '../services/document_service.dart';
 import '../services/export_service.dart';
@@ -24,7 +25,7 @@ class SettingsScreen extends StatelessWidget {
       body: Column(
         children: [
           const GradientHeader(
-            title: 'Settings',
+            title: AppStrings.settings,
             leading: Icon(Icons.settings_rounded,
                 color: Colors.white, size: 26),
           ),
@@ -34,31 +35,31 @@ class SettingsScreen extends StatelessWidget {
               children: [
                 _profileCard(context, settings, service),
                 const SizedBox(height: 18),
-                _sectionLabel('Appearance'),
+                _sectionLabel(AppStrings.appearance),
                 _card([
                   _radioTile(
                       context,
-                      'Light',
+                      AppStrings.themeLight,
                       Icons.light_mode_outlined,
                       settings.themeMode == ThemeMode.light,
                       () => settings.setThemeMode(ThemeMode.light)),
                   _divider(),
                   _radioTile(
                       context,
-                      'Dark',
+                      AppStrings.themeDark,
                       Icons.dark_mode_outlined,
                       settings.themeMode == ThemeMode.dark,
                       () => settings.setThemeMode(ThemeMode.dark)),
                   _divider(),
                   _radioTile(
                       context,
-                      'System default',
+                      AppStrings.themeSystem,
                       Icons.brightness_auto_outlined,
                       settings.themeMode == ThemeMode.system,
                       () => settings.setThemeMode(ThemeMode.system)),
                 ]),
                 const SizedBox(height: 18),
-                _sectionLabel('Editor'),
+                _sectionLabel(AppStrings.editor),
                 _card([
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
@@ -67,7 +68,7 @@ class SettingsScreen extends StatelessWidget {
                         const Icon(Icons.text_fields,
                             color: AppColors.textSecondary),
                         const SizedBox(width: 12),
-                        const Text('Font size',
+                        const Text(AppStrings.fontSize,
                             style:
                                 TextStyle(fontWeight: FontWeight.w600)),
                         const Spacer(),
@@ -96,26 +97,26 @@ class SettingsScreen extends StatelessWidget {
                     activeThumbColor: AppColors.primaryBlue,
                     secondary: const Icon(Icons.save_outlined,
                         color: AppColors.textSecondary),
-                    title: const Text('Auto-save',
+                    title: const Text(AppStrings.autoSave,
                         style: TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: const Text('Save changes automatically'),
+                    subtitle: const Text(AppStrings.autoSaveSub),
                     onChanged: (v) => settings.setAutosave(v),
                   ),
                 ]),
                 const SizedBox(height: 18),
-                _sectionLabel('Data'),
+                _sectionLabel(AppStrings.data),
                 _card([
                   _actionTile(
                     Icons.bar_chart_rounded,
-                    'Statistics',
-                    '${service.totalDocuments} docs · ${Formatters.compactNumber(service.totalWords)} words · ${Formatters.compactNumber(service.totalCharacters)} chars',
+                    AppStrings.statistics,
+                    '${service.totalDocuments} ${AppStrings.document} · ${Formatters.compactNumber(service.totalWords)} ${AppStrings.words} · ${Formatters.compactNumber(service.totalCharacters)} ${AppStrings.characters}',
                     () => _showStats(context, service),
                   ),
                   _divider(),
                   _actionTile(
                     Icons.delete_outline,
-                    'Trash',
-                    '${service.trashedDocuments.length} item(s)',
+                    AppStrings.trash,
+                    '${service.trashedDocuments.length} ${AppStrings.itemsCount}',
                     () => Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const TrashScreen()),
@@ -124,34 +125,34 @@ class SettingsScreen extends StatelessWidget {
                   _divider(),
                   _actionTile(
                     Icons.file_upload_outlined,
-                    'Import text file',
-                    'Create a document from a .txt file',
+                    AppStrings.importTextFile,
+                    AppStrings.importSub,
                     () => _importFile(context, service),
                   ),
                   _divider(),
                   _actionTile(
                     Icons.delete_sweep_outlined,
-                    'Clear all documents',
-                    'Move everything to trash',
+                    AppStrings.clearAllDocs,
+                    AppStrings.clearAllSub,
                     () => _confirmClear(context, service),
                     danger: true,
                   ),
                 ]),
                 const SizedBox(height: 18),
-                _sectionLabel('About'),
+                _sectionLabel(AppStrings.about),
                 _card([
-                  _actionTile(Icons.info_outline, 'Word Master',
-                      'Version 1.0.0', () {}),
+                  _actionTile(Icons.info_outline, AppStrings.appName,
+                      AppStrings.version, () {}),
                   _divider(),
-                  _actionTile(Icons.star_outline, 'Rate the app',
-                      'Enjoying Word Master?', () {
-                    AppSnack.show(context, 'Thanks for your support! ⭐');
+                  _actionTile(Icons.star_outline, AppStrings.rateApp,
+                      AppStrings.rateSub, () {
+                    AppSnack.show(context, AppStrings.rateThanks);
                   }),
                 ]),
                 const SizedBox(height: 24),
                 Center(
                   child: Text(
-                    'Made with Flutter · Word Master',
+                    AppStrings.madeWith,
                     style: TextStyle(
                       color: AppColors.textMuted,
                       fontSize: 12,
@@ -209,7 +210,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${service.totalDocuments} documents',
+                  '${service.totalDocuments} ${AppStrings.documents}',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.85),
                     fontSize: 13,
@@ -286,7 +287,7 @@ class SettingsScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('Your name'),
+        title: const Text(AppStrings.yourName),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -298,14 +299,14 @@ class SettingsScreen extends StatelessWidget {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+              child: const Text(AppStrings.cancel)),
           ElevatedButton(
             onPressed: () {
               final name = controller.text.trim();
               if (name.isNotEmpty) settings.setUserName(name);
               Navigator.pop(ctx);
             },
-            child: const Text('Save'),
+            child: const Text(AppStrings.save),
           ),
         ],
       ),
@@ -318,13 +319,12 @@ class SettingsScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('Clear all documents?'),
-        content: const Text(
-            'This will move all your documents to the trash. You can restore them later.'),
+        title: const Text(AppStrings.clearAllConfirm),
+        content: const Text(AppStrings.clearAllMsg),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+              child: const Text(AppStrings.cancel)),
           ElevatedButton(
             style:
                 ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
@@ -334,10 +334,10 @@ class SettingsScreen extends StatelessWidget {
               }
               if (ctx.mounted) Navigator.pop(ctx);
               if (context.mounted) {
-                AppSnack.show(context, 'Documents moved to trash');
+                AppSnack.show(context, AppStrings.docsMovedToTrash);
               }
             },
-            child: const Text('Move all to trash'),
+            child: const Text(AppStrings.moveAllToTrash),
           ),
         ],
       ),
@@ -365,22 +365,22 @@ class SettingsScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('Your writing stats'),
+        title: const Text(AppStrings.yourWritingStats),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            row('Total documents', '${service.totalDocuments}'),
-            row('Total words', '${service.totalWords}'),
-            row('Total characters', '${service.totalCharacters}'),
-            row('Average words/doc', '$avg'),
-            row('Favorites', '${service.favoriteDocuments.length}'),
-            row('In trash', '${service.trashedDocuments.length}'),
+            row(AppStrings.totalDocs, '${service.totalDocuments}'),
+            row(AppStrings.totalWords, '${service.totalWords}'),
+            row(AppStrings.totalChars, '${service.totalCharacters}'),
+            row(AppStrings.avgWordsPerDoc, '$avg'),
+            row(AppStrings.favorites, '${service.favoriteDocuments.length}'),
+            row(AppStrings.inTrash, '${service.trashedDocuments.length}'),
           ],
         ),
         actions: [
           ElevatedButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Close')),
+              child: const Text(AppStrings.close)),
         ],
       ),
     );
@@ -401,7 +401,7 @@ class SettingsScreen extends StatelessWidget {
       final content = String.fromCharCodes(bytes);
       final title = file.name.replaceAll(RegExp(r'\.[^.]+$'), '');
       final doc = await service.createDocument(
-        title: title.isEmpty ? 'Imported Document' : title,
+        title: title.isEmpty ? AppStrings.untitled : title,
         contentJson: ExportService.plainTextToDelta(content),
         plainText: content,
       );
@@ -413,7 +413,7 @@ class SettingsScreen extends StatelessWidget {
       );
     } catch (e) {
       if (context.mounted) {
-        AppSnack.show(context, 'Import failed', error: true);
+        AppSnack.show(context, AppStrings.importFailed, error: true);
       }
     }
   }

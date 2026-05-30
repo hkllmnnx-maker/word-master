@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
 import '../core/app_theme.dart';
+import '../core/strings.dart';
 
 /// A custom two-row formatting toolbar that mirrors the reference UI.
 /// It controls a [QuillController] directly via [formatSelection].
@@ -211,7 +212,7 @@ class _FormatToolbarState extends State<FormatToolbar> {
       builder: (ctx) => AlertDialog(
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('Insert link'),
+        title: const Text(AppStrings.insertLink),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -224,7 +225,7 @@ class _FormatToolbarState extends State<FormatToolbar> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+              child: const Text(AppStrings.cancel)),
           ElevatedButton(
             onPressed: () {
               final url = controller.text.trim();
@@ -233,7 +234,7 @@ class _FormatToolbarState extends State<FormatToolbar> {
               }
               Navigator.pop(ctx);
             },
-            child: const Text('Apply'),
+            child: const Text(AppStrings.apply),
           ),
         ],
       ),
@@ -253,7 +254,7 @@ class _FormatToolbarState extends State<FormatToolbar> {
   ];
 
   void _pickTextColor() {
-    _showColorPicker('Text color', (color) {
+    _showColorPicker(AppStrings.textColor, (color) {
       final hex =
           '#${color.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
       c.formatSelection(ColorAttribute(hex));
@@ -282,7 +283,7 @@ class _FormatToolbarState extends State<FormatToolbar> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Highlight color',
+              const Text(AppStrings.highlightColor,
                   style: TextStyle(
                       fontWeight: FontWeight.w700, fontSize: 16)),
               const SizedBox(height: 16),

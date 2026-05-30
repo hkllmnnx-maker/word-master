@@ -63,7 +63,7 @@ class AppTheme {
     );
 
     return base.copyWith(
-      textTheme: GoogleFonts.interTextTheme(base.textTheme).apply(
+      textTheme: GoogleFonts.cairoTextTheme(base.textTheme).apply(
         bodyColor: AppColors.textPrimary,
         displayColor: AppColors.textPrimary,
       ),
@@ -98,7 +98,7 @@ class AppTheme {
       ),
     );
     return base.copyWith(
-      textTheme: GoogleFonts.interTextTheme(base.textTheme).apply(
+      textTheme: GoogleFonts.cairoTextTheme(base.textTheme).apply(
         bodyColor: Colors.white,
         displayColor: Colors.white,
       ),

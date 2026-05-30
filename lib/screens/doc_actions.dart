@@ -166,6 +166,24 @@ class DocActions {
                     }
                   },
                 ),
+                _tile(
+                  ctx,
+                  doc.isArchived
+                      ? Icons.unarchive_outlined
+                      : Icons.archive_outlined,
+                  doc.isArchived
+                      ? AppStrings.unarchiveDoc
+                      : AppStrings.archiveDoc,
+                  () {
+                    service.toggleArchive(doc.id);
+                    Navigator.pop(ctx);
+                    AppSnack.show(
+                        context,
+                        doc.isArchived
+                            ? AppStrings.documentUnarchived
+                            : AppStrings.documentArchived);
+                  },
+                ),
                 _tile(ctx, Icons.delete_outline, AppStrings.moveToTrash, () {
                   service.moveToTrash(doc.id);
                   Navigator.pop(ctx);

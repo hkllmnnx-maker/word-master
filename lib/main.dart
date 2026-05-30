@@ -11,7 +11,8 @@ import 'core/strings.dart';
 import 'models/document_model.dart';
 import 'services/document_service.dart';
 import 'services/settings_service.dart';
-import 'screens/root_shell.dart';
+import 'services/template_service.dart';
+import 'screens/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,11 +29,15 @@ Future<void> main() async {
   final settingsService = SettingsService();
   await settingsService.init();
 
+  final templateService = TemplateService();
+  await templateService.init();
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: documentService),
         ChangeNotifierProvider.value(value: settingsService),
+        ChangeNotifierProvider.value(value: templateService),
       ],
       child: const WordMasterApp(),
     ),
@@ -76,7 +81,7 @@ class WordMasterApp extends StatelessWidget {
           child: child!,
         );
       },
-      home: const RootShell(),
+      home: const SplashScreen(),
     );
   }
 }

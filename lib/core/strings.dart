@@ -249,4 +249,64 @@ class AppStrings {
   static const feature5 = 'قفل المستندات بكلمة سر';
   static const feature6 = 'وضع داكن وخطوط قابلة للتخصيص';
   static const developedWith = 'تم التطوير باستخدام Flutter';
+
+  // الوسوم
+  static const tags = 'الوسوم';
+  static const addTag = 'إضافة وسم';
+  static const manageTags = 'إدارة الوسوم';
+  static const tagHint = 'اكتب وسماً واضغط إدخال';
+  static const noTags = 'لا توجد وسوم بعد';
+  static const filterByTag = 'تصفية حسب الوسم';
+  static const tagsUpdated = 'تم تحديث الوسوم';
+
+  // الأرشيف
+  static const archive = 'الأرشيف';
+  static const archived = 'مؤرشف';
+  static const archiveDoc = 'أرشفة المستند';
+  static const unarchiveDoc = 'إلغاء الأرشفة';
+  static const documentArchived = 'تمت أرشفة المستند';
+  static const documentUnarchived = 'تم إلغاء الأرشفة';
+  static const noArchivedDocs = 'لا توجد مستندات مؤرشفة';
+  static const archivedHint = 'المستندات المؤرشفة مخفية عن القائمة الرئيسية';
+
+  // التحليلات
+  static const insights = 'التحليلات';
+  static const insightsTitle = 'تحليلات الكتابة';
+  static const weeklyActivity = 'نشاط آخر 7 أيام';
+  static const overview = 'نظرة عامة';
+  static const totalWritingDays = 'أيام الكتابة';
+  static const bestStreak = 'أطول سلسلة';
+  static const avgWordsDay = 'متوسط الكلمات/يوم';
+  static const docsByFolder = 'المستندات حسب المجلد';
+  static const noActivityYet = 'ابدأ الكتابة لرؤية تحليلاتك هنا';
+  static const wordsUnit = 'كلمة';
+  static const day = 'يوم';
+
+  // القوالب المخصصة
+  static const saveAsTemplate = 'حفظ كقالب';
+  static const myTemplates = 'قوالبي';
+  static const templateSaved = 'تم حفظ القالب';
+  static const templateName = 'اسم القالب';
+  static const noCustomTemplates = 'لا توجد قوالب مخصصة';
+  static const useTemplate = 'استخدام القالب';
+  static const deleteTemplate = 'حذف القالب';
+
+  // النسخ الاحتياطي
+  static const backup = 'النسخ الاحتياطي';
+  static const exportBackup = 'تصدير نسخة احتياطية';
+  static const exportBackupSub = 'احفظ كل مستنداتك في ملف واحد';
+  static const importBackup = 'استعادة نسخة احتياطية';
+  static const importBackupSub = 'استرجع مستنداتك من ملف نسخة احتياطية';
+  static const backupExported = 'تم تصدير النسخة الاحتياطية';
+  static const backupRestored = 'تمت الاستعادة:';
+  static const backupRestoredDocs = 'مستند';
+  static const backupInvalid = 'ملف النسخة الاحتياطية غير صالح';
+  static const restoreConfirm = 'استعادة المستندات';
+  static const restoreMsg =
+      'سيتم إضافة المستندات من الملف. المستندات الموجودة لن تتأثر. متابعة؟';
+  static const restore2 = 'استعادة';
+
+  // البحث في المحرر
+  static const matchesFound = 'نتيجة';
+  static const noMatches = 'لا توجد نتائج';
 }

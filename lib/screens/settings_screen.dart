@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../core/app_theme.dart';
 import '../core/strings.dart';
@@ -11,6 +12,7 @@ import '../services/settings_service.dart';
 import '../widgets/gradient_header.dart';
 import 'trash_screen.dart';
 import 'editor_screen.dart';
+import 'insights_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -114,6 +116,17 @@ class SettingsScreen extends StatelessWidget {
                 _sectionLabel(AppStrings.data),
                 _card([
                   _actionTile(
+                    Icons.insights_rounded,
+                    AppStrings.insights,
+                    AppStrings.insightsTitle,
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const InsightsScreen()),
+                    ),
+                  ),
+                  _divider(),
+                  _actionTile(
                     Icons.bar_chart_rounded,
                     AppStrings.statistics,
                     '${service.totalDocuments} ${AppStrings.document} · ${Formatters.compactNumber(service.totalWords)} ${AppStrings.words} · ${Formatters.compactNumber(service.totalCharacters)} ${AppStrings.characters}',
@@ -143,6 +156,23 @@ class SettingsScreen extends StatelessWidget {
                     AppStrings.clearAllSub,
                     () => _confirmClear(context, service),
                     danger: true,
+                  ),
+                ]),
+                const SizedBox(height: 18),
+                _sectionLabel(AppStrings.backup),
+                _card([
+                  _actionTile(
+                    Icons.cloud_upload_outlined,
+                    AppStrings.exportBackup,
+                    AppStrings.exportBackupSub,
+                    () => _exportBackup(context, service),
+                  ),
+                  _divider(),
+                  _actionTile(
+                    Icons.cloud_download_outlined,
+                    AppStrings.importBackup,
+                    AppStrings.importBackupSub,
+                    () => _confirmRestore(context, service),
                   ),
                 ]),
                 const SizedBox(height: 18),
@@ -434,6 +464,75 @@ class SettingsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _exportBackup(
+      BuildContext context, DocumentService service) async {
+    try {
+      final json = service.exportBackup();
+      final date = DateTime.now();
+      final name =
+          'word_master_backup_${date.year}${date.month}${date.day}.json';
+      await Share.share(json, subject: name);
+      if (context.mounted) {
+        AppSnack.show(context, AppStrings.backupExported);
+      }
+    } catch (_) {
+      if (context.mounted) {
+        AppSnack.show(context, AppStrings.importFailed, error: true);
+      }
+    }
+  }
+
+  void _confirmRestore(BuildContext context, DocumentService service) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text(AppStrings.restoreConfirm),
+        content: const Text(AppStrings.restoreMsg),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text(AppStrings.cancel)),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _restoreBackup(context, service);
+            },
+            child: const Text(AppStrings.restore2),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _restoreBackup(
+      BuildContext context, DocumentService service) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+      final bytes = result.files.first.bytes;
+      if (bytes == null) return;
+      final content = String.fromCharCodes(bytes);
+      final count = await service.importBackup(content);
+      if (!context.mounted) return;
+      if (count < 0) {
+        AppSnack.show(context, AppStrings.backupInvalid, error: true);
+      } else {
+        AppSnack.show(context,
+            '${AppStrings.backupRestored} $count ${AppStrings.backupRestoredDocs}');
+      }
+    } catch (_) {
+      if (context.mounted) {
+        AppSnack.show(context, AppStrings.backupInvalid, error: true);
+      }
+    }
   }
 
   Future<void> _importFile(

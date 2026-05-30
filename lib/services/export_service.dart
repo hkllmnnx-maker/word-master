@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 /// Converts a flutter_quill Delta (JSON) into PDF / HTML / plain text.
 /// Works directly on the Delta operations so it is independent of the editor.
@@ -196,45 +197,52 @@ $body
   static Future<Uint8List> toPdf(String contentJson,
       {String title = 'Document'}) async {
     final blocks = _parse(contentJson);
-    final doc = pw.Document(title: title);
 
-    // Use Google-Noto fonts bundled with the printing/pdf default fallback.
+    // تحميل خط عربي (Cairo) لعرض النص العربي بشكل صحيح في PDF.
+    final arabic = await PdfGoogleFonts.cairoRegular();
+    final arabicBold = await PdfGoogleFonts.cairoBold();
+
+    final doc = pw.Document(title: title);
     final widgets = <pw.Widget>[];
 
     widgets.add(
-      pw.Header(
-        level: 0,
-        child: pw.Text(title,
-            style: pw.TextStyle(
-                fontSize: 22, fontWeight: pw.FontWeight.bold)),
+      pw.Container(
+        alignment: pw.Alignment.centerRight,
+        child: pw.Text(
+          title,
+          textDirection: pw.TextDirection.rtl,
+          style: pw.TextStyle(font: arabicBold, fontSize: 24),
+        ),
       ),
     );
-    widgets.add(pw.SizedBox(height: 8));
+    widgets.add(pw.Divider(thickness: 1.5));
+    widgets.add(pw.SizedBox(height: 6));
 
     for (final b in blocks) {
       final attrs = b.blockAttrs;
       final header = attrs['header'];
       final align = attrs['align'];
       double fontSize = 12;
-      pw.FontWeight weight = pw.FontWeight.normal;
+      bool boldBlock = false;
       if (header == 1) {
         fontSize = 20;
-        weight = pw.FontWeight.bold;
+        boldBlock = true;
       } else if (header == 2) {
         fontSize = 16;
-        weight = pw.FontWeight.bold;
+        boldBlock = true;
       } else if (header == 3) {
         fontSize = 14;
-        weight = pw.FontWeight.bold;
+        boldBlock = true;
       }
 
       final spans = b.runs.map((r) {
         final a = r.attrs;
+        final isBold = (a['bold'] == true) || boldBlock;
         return pw.TextSpan(
           text: r.text,
           style: pw.TextStyle(
+            font: isBold ? arabicBold : arabic,
             fontSize: fontSize,
-            fontWeight: (a['bold'] == true) ? pw.FontWeight.bold : weight,
             fontStyle:
                 (a['italic'] == true) ? pw.FontStyle.italic : null,
             decoration: (a['underline'] == true)
@@ -247,15 +255,30 @@ $body
       final list = attrs['list'];
       String? bullet;
       if (list == 'bullet') bullet = '•  ';
-      if (list == 'ordered') bullet = '–  ';
+      if (list == 'ordered') bullet = '-  ';
+
+      final isQuote = attrs['blockquote'] == true;
 
       widgets.add(
         pw.Container(
           alignment: _pdfAlign(align),
           margin: const pw.EdgeInsets.only(bottom: 6),
+          padding: isQuote
+              ? const pw.EdgeInsets.only(right: 10)
+              : pw.EdgeInsets.zero,
+          decoration: isQuote
+              ? const pw.BoxDecoration(
+                  border: pw.Border(
+                      right: pw.BorderSide(
+                          color: PdfColors.deepPurple, width: 3)),
+                )
+              : null,
           child: pw.RichText(
+            textDirection: pw.TextDirection.rtl,
             text: pw.TextSpan(children: [
-              if (bullet != null) pw.TextSpan(text: bullet),
+              if (bullet != null)
+                pw.TextSpan(
+                    text: bullet, style: pw.TextStyle(font: arabic)),
               ...spans,
             ]),
           ),
@@ -266,6 +289,8 @@ $body
     doc.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
+        textDirection: pw.TextDirection.rtl,
+        theme: pw.ThemeData.withFont(base: arabic, bold: arabicBold),
         margin: const pw.EdgeInsets.all(40),
         build: (_) => widgets,
       ),
@@ -278,12 +303,13 @@ $body
     switch (align) {
       case 'center':
         return pw.Alignment.center;
+      case 'left':
+        return pw.Alignment.centerLeft;
       case 'right':
         return pw.Alignment.centerRight;
-      case 'justify':
-        return pw.Alignment.centerLeft;
       default:
-        return pw.Alignment.centerLeft;
+        // الافتراضي للعربية: محاذاة لليمين.
+        return pw.Alignment.centerRight;
     }
   }
 

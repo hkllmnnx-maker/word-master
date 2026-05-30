@@ -11,6 +11,7 @@ import '../core/strings.dart';
 import '../core/utils.dart';
 import '../services/document_service.dart';
 import '../services/settings_service.dart';
+import '../services/template_service.dart';
 import '../widgets/format_toolbar.dart';
 import 'doc_actions.dart';
 
@@ -579,6 +580,24 @@ class _EditorScreenState extends State<EditorScreen> {
                 },
               ),
               ListTile(
+                leading: const Icon(Icons.label_outline),
+                title: const Text(AppStrings.manageTags),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await _save(silent: true);
+                  if (mounted) _manageTags();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.bookmark_add_outlined),
+                title: const Text(AppStrings.saveAsTemplate),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await _save(silent: true);
+                  if (mounted) _saveAsTemplate();
+                },
+              ),
+              ListTile(
                 leading: const Icon(Icons.ios_share),
                 title: const Text(AppStrings.export),
                 onTap: () async {
@@ -846,6 +865,139 @@ class _EditorScreenState extends State<EditorScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _manageTags() {
+    if (_docId == null) return;
+    final service = context.read<DocumentService>();
+    final doc = service.getById(_docId!);
+    if (doc == null) return;
+    final tags = List<String>.from(doc.tags);
+    final controller = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).cardTheme.color,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(AppStrings.manageTags,
+                      style: TextStyle(
+                          fontWeight: FontWeight.w700, fontSize: 16)),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      hintText: AppStrings.tagHint,
+                      prefixIcon: const Icon(Icons.label_outline),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onSubmitted: (v) {
+                      final t = v.trim();
+                      if (t.isNotEmpty && !tags.contains(t)) {
+                        setSheet(() => tags.add(t));
+                      }
+                      controller.clear();
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  if (tags.isEmpty)
+                    const Text(AppStrings.noTags,
+                        style: TextStyle(color: AppColors.textMuted))
+                  else
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: tags
+                          .map((t) => Chip(
+                                label: Text(t),
+                                backgroundColor: AppColors.activeChipBg,
+                                deleteIcon: const Icon(Icons.close, size: 16),
+                                onDeleted: () =>
+                                    setSheet(() => tags.remove(t)),
+                              ))
+                          .toList(),
+                    ),
+                  const SizedBox(height: 18),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryBlue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        service.setTags(_docId!, tags);
+                        Navigator.pop(ctx);
+                        AppSnack.show(context, AppStrings.tagsUpdated);
+                      },
+                      child: const Text(AppStrings.save),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _saveAsTemplate() {
+    final controller = TextEditingController(text: _title);
+    final templates = context.read<TemplateService>();
+    final contentJson =
+        jsonEncode(_controller.document.toDelta().toJson());
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text(AppStrings.saveAsTemplate),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(
+            labelText: AppStrings.templateName,
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text(AppStrings.cancel)),
+          ElevatedButton(
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                templates.addTemplate(name, contentJson);
+                AppSnack.show(context, AppStrings.templateSaved);
+              }
+              Navigator.pop(ctx);
+            },
+            child: const Text(AppStrings.save),
+          ),
+        ],
       ),
     );
   }

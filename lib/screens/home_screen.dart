@@ -11,6 +11,7 @@ import '../widgets/gradient_header.dart';
 import '../widgets/document_card.dart';
 import 'editor_screen.dart';
 import 'doc_actions.dart';
+import 'insights_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final ValueChanged<int> onOpenTab;
@@ -30,6 +31,13 @@ class HomeScreen extends StatelessWidget {
           GradientHeader(
             title: AppStrings.homeTitle,
             actions: [
+              _circleBtn(Icons.insights_rounded, () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const InsightsScreen()),
+                );
+              }),
+              const SizedBox(width: 8),
               _circleBtn(Icons.search, () => _openSearch(context)),
             ],
             bottom: HeaderInfoStrip(
@@ -143,7 +151,12 @@ class HomeScreen extends StatelessWidget {
     final progress = goal == 0 ? 0.0 : (today / goal).clamp(0.0, 1.0);
     final reached = today >= goal && goal > 0;
 
-    return Container(
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const InsightsScreen()),
+      ),
+      child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -247,6 +260,7 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

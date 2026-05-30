@@ -33,13 +33,15 @@ class DocumentModelAdapter extends TypeAdapter<DocumentModel> {
       trashedAt: fields[13] as DateTime?,
       versions: (fields[14] as List?)?.cast<DocVersion>(),
       lockPin: fields[15] as String,
+      tags: (fields[16] as List?)?.cast<String>(),
+      isArchived: fields[17] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, DocumentModel obj) {
     writer
-      ..writeByte(16)
+      ..writeByte(18)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -71,7 +73,11 @@ class DocumentModelAdapter extends TypeAdapter<DocumentModel> {
       ..writeByte(14)
       ..write(obj.versions)
       ..writeByte(15)
-      ..write(obj.lockPin);
+      ..write(obj.lockPin)
+      ..writeByte(16)
+      ..write(obj.tags)
+      ..writeByte(17)
+      ..write(obj.isArchived);
   }
 
   @override

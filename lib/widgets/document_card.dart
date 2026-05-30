@@ -164,6 +164,11 @@ class DocumentListTile extends StatelessWidget {
                               ),
                             ),
                           ),
+                          if (doc.isLocked) ...[
+                            const Icon(Icons.lock,
+                                color: AppColors.textMuted, size: 15),
+                            const SizedBox(width: 4),
+                          ],
                           if (doc.isFavorite)
                             const Icon(Icons.star_rounded,
                                 color: Color(0xFFF59E0B), size: 18),
@@ -198,6 +203,32 @@ class DocumentListTile extends StatelessWidget {
                           ),
                         ],
                       ),
+                      if (doc.tags.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: doc.tags
+                              .take(3)
+                              .map((t) => Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.activeChipBg,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      '#$t',
+                                      style: const TextStyle(
+                                        fontSize: 10.5,
+                                        color: AppColors.primaryBlue,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ))
+                              .toList(),
+                        ),
+                      ],
                     ],
                   ),
                 ),

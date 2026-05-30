@@ -65,6 +65,14 @@ class DocumentModel extends HiveObject {
   @HiveField(15)
   String lockPin;
 
+  /// Free-form text tags for organizing and filtering documents.
+  @HiveField(16)
+  List<String> tags;
+
+  /// Whether this document is archived (hidden from main list, not trashed).
+  @HiveField(17)
+  bool isArchived;
+
   DocumentModel({
     required this.id,
     required this.title,
@@ -82,7 +90,10 @@ class DocumentModel extends HiveObject {
     this.trashedAt,
     List<DocVersion>? versions,
     this.lockPin = '',
-  }) : versions = versions ?? [];
+    List<String>? tags,
+    this.isArchived = false,
+  })  : versions = versions ?? [],
+        tags = tags ?? [];
 
   /// Whether this document is protected by a PIN.
   bool get isLocked => lockPin.isNotEmpty;

@@ -36,7 +36,7 @@ class DocumentService extends ChangeNotifier {
       _box.values.where((d) => !d.isTrashed).toList();
 
   List<DocumentModel> get documents {
-    final list = _active;
+    final list = _active.where((d) => !d.isArchived).toList();
     list.sort((a, b) {
       if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
       return b.updatedAt.compareTo(a.updatedAt);
@@ -196,6 +196,116 @@ class DocumentService extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ---- Tags ----------------------------------------------------------------
+
+  /// All distinct tags currently in use across active documents, sorted.
+  List<String> get allTags {
+    final set = <String>{};
+    for (final d in _active) {
+      set.addAll(d.tags);
+    }
+    final list = set.toList()..sort();
+    return list;
+  }
+
+  Future<void> setTags(String id, List<String> tags) async {
+    final doc = getById(id);
+    if (doc == null) return;
+    doc.tags = tags.map((t) => t.trim()).where((t) => t.isNotEmpty).toList();
+    await doc.save();
+    notifyListeners();
+  }
+
+  List<DocumentModel> documentsWithTag(String tag) =>
+      documents.where((d) => d.tags.contains(tag)).toList();
+
+  int countWithTag(String tag) =>
+      _active.where((d) => d.tags.contains(tag)).length;
+
+  // ---- Archive -------------------------------------------------------------
+
+  List<DocumentModel> get archivedDocuments {
+    final list = _box.values
+        .where((d) => d.isArchived && !d.isTrashed)
+        .toList();
+    list.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    return list;
+  }
+
+  Future<void> toggleArchive(String id) async {
+    final doc = getById(id);
+    if (doc == null) return;
+    doc.isArchived = !doc.isArchived;
+    await doc.save();
+    notifyListeners();
+  }
+
+  // ---- Backup / Restore ----------------------------------------------------
+
+  /// Serializes every document (incl. trashed) into a portable JSON string.
+  String exportBackup() {
+    final docs = _box.values.map((d) => {
+          'id': d.id,
+          'title': d.title,
+          'contentJson': d.contentJson,
+          'createdAt': d.createdAt.toIso8601String(),
+          'updatedAt': d.updatedAt.toIso8601String(),
+          'plainText': d.plainText,
+          'isFavorite': d.isFavorite,
+          'colorTag': d.colorTag,
+          'folder': d.folder,
+          'isPinned': d.isPinned,
+          'isTrashed': d.isTrashed,
+          'lockPin': d.lockPin,
+          'tags': d.tags,
+          'isArchived': d.isArchived,
+        });
+    return jsonEncode({
+      'version': 1,
+      'exportedAt': DateTime.now().toIso8601String(),
+      'documents': docs.toList(),
+    });
+  }
+
+  /// Restores documents from a backup JSON string. Returns count imported.
+  Future<int> importBackup(String backupJson) async {
+    int count = 0;
+    try {
+      final data = jsonDecode(backupJson) as Map<String, dynamic>;
+      final docs = (data['documents'] as List?) ?? [];
+      for (final raw in docs) {
+        final m = raw as Map<String, dynamic>;
+        final id = (m['id'] as String?) ?? _uuid.v4();
+        // Skip if a document with the same id already exists.
+        if (getById(id) != null) continue;
+        final doc = DocumentModel(
+          id: id,
+          title: (m['title'] as String?) ?? 'مستند',
+          contentJson: (m['contentJson'] as String?) ?? emptyDelta,
+          createdAt: DateTime.tryParse(m['createdAt'] as String? ?? '') ??
+              DateTime.now(),
+          updatedAt: DateTime.tryParse(m['updatedAt'] as String? ?? '') ??
+              DateTime.now(),
+          plainText: (m['plainText'] as String?) ?? '',
+          isFavorite: (m['isFavorite'] as bool?) ?? false,
+          colorTag: (m['colorTag'] as int?) ?? 0,
+          folder: (m['folder'] as String?) ?? '',
+          isPinned: (m['isPinned'] as bool?) ?? false,
+          isTrashed: (m['isTrashed'] as bool?) ?? false,
+          lockPin: (m['lockPin'] as String?) ?? '',
+          tags: ((m['tags'] as List?) ?? []).map((e) => '$e').toList(),
+          isArchived: (m['isArchived'] as bool?) ?? false,
+        );
+        await _box.put(doc.id, doc);
+        count++;
+      }
+      notifyListeners();
+    } catch (_) {
+      return -1; // invalid backup
+    }
+    return count;
+  }
+
   // ---- Lock / privacy ------------------------------------------------------
 
   /// Sets (or updates) a PIN lock on the document.
@@ -231,11 +341,33 @@ class DocumentService extends ChangeNotifier {
   static const String _dailyDateKey = 'daily_words_date';
   static const String _streakKey = 'write_streak';
   static const String _lastWriteDayKey = 'last_write_day';
+  static const String _bestStreakKey = 'best_streak';
+  static const String _historyPrefix = 'words_on_';
+  static const String _writingDaysKey = 'writing_days_count';
 
   String _todayKey() {
     final n = DateTime.now();
     return '${n.year}-${n.month}-${n.day}';
   }
+
+  String _dayKeyFor(DateTime d) => '${d.year}-${d.month}-${d.day}';
+
+  /// Words written on a specific day (from the persistent history).
+  int wordsOnDay(DateTime day) =>
+      _prefs.getInt('$_historyPrefix${_dayKeyFor(day)}') ?? 0;
+
+  /// Returns word counts for the last [days] days (oldest → newest).
+  List<int> lastDaysActivity(int days) {
+    final today = DateTime.now();
+    return List.generate(days, (i) {
+      final d = today.subtract(Duration(days: days - 1 - i));
+      return wordsOnDay(d);
+    });
+  }
+
+  int get bestStreak => _prefs.getInt(_bestStreakKey) ?? 0;
+
+  int get totalWritingDays => _prefs.getInt(_writingDaysKey) ?? 0;
 
   /// Words written today (resets daily).
   int get wordsToday {
@@ -247,7 +379,7 @@ class DocumentService extends ChangeNotifier {
   /// Consecutive days the user wrote something.
   int get writeStreak => _prefs.getInt(_streakKey) ?? 0;
 
-  /// Adds words written to today's counter and updates the streak.
+  /// Adds words written to today's counter and updates the streak + history.
   Future<void> addWordsWritten(int delta) async {
     if (delta <= 0) return;
     final today = _todayKey();
@@ -257,15 +389,27 @@ class DocumentService extends ChangeNotifier {
     await _prefs.setString(_dailyDateKey, today);
     await _prefs.setInt(_dailyKey, current);
 
-    // Streak logic
+    // Persistent per-day history (for analytics charts).
+    final histKey = '$_historyPrefix$today';
+    await _prefs.setInt(histKey, (_prefs.getInt(histKey) ?? 0) + delta);
+
+    // Streak + writing-days + best-streak logic
     final lastDay = _prefs.getString(_lastWriteDayKey);
     if (lastDay != today) {
       final yesterday = DateTime.now().subtract(const Duration(days: 1));
-      final yKey = '${yesterday.year}-${yesterday.month}-${yesterday.day}';
+      final yKey = _dayKeyFor(yesterday);
       int streak = _prefs.getInt(_streakKey) ?? 0;
       streak = (lastDay == yKey) ? streak + 1 : 1;
       await _prefs.setInt(_streakKey, streak);
       await _prefs.setString(_lastWriteDayKey, today);
+
+      // Best streak
+      final best = _prefs.getInt(_bestStreakKey) ?? 0;
+      if (streak > best) await _prefs.setInt(_bestStreakKey, streak);
+
+      // Total distinct writing days
+      await _prefs.setInt(
+          _writingDaysKey, (_prefs.getInt(_writingDaysKey) ?? 0) + 1);
     }
     notifyListeners();
   }

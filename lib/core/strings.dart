@@ -309,4 +309,38 @@ class AppStrings {
   // البحث في المحرر
   static const matchesFound = 'نتيجة';
   static const noMatches = 'لا توجد نتائج';
+
+  // قفل التطبيق (App Lock)
+  static const appLock = 'قفل التطبيق';
+  static const appLockSub = 'حماية التطبيق برمز PIN عند الفتح';
+  static const enableAppLock = 'تفعيل قفل التطبيق';
+  static const disableAppLock = 'إيقاف قفل التطبيق';
+  static const appLockEnabled = 'تم تفعيل قفل التطبيق';
+  static const appLockDisabled = 'تم إيقاف قفل التطبيق';
+  static const unlockApp = 'افتح القفل للمتابعة';
+  static const changeAppPin = 'تغيير رمز القفل';
+  static const security = 'الأمان والخصوصية';
+
+  // تخصيص المظهر
+  static const accentColor = 'لون التطبيق';
+  static const accentColorSub = 'اختر اللون الأساسي للتطبيق';
+  static const accentSaved = 'تم تغيير لون التطبيق';
+
+  // استعراض الوسوم
+  static const allTagsTitle = 'كل الوسوم';
+  static const tagDocsTitle = 'مستندات الوسم';
+  static const documentsCount = 'مستند';
+  static const noTaggedDocs = 'لا توجد مستندات بهذا الوسم';
+
+  // متوسط متقدم
+  static const monthlyActivity = 'نشاط آخر 30 يوماً';
+  static const productivityScore = 'مؤشر الإنتاجية';
+  static const totalDocsLabel = 'إجمالي المستندات';
+  static const totalWordsLabel = 'إجمالي الكلمات';
+
+  // البحث داخل المحرر
+  static const findInDoc = 'بحث في المستند';
+  static const searchHint = 'اكتب كلمة للبحث...';
+  static const nextMatch = 'التالي';
+  static const prevMatch = 'السابق';
 }

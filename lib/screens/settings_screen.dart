@@ -13,6 +13,7 @@ import '../widgets/gradient_header.dart';
 import 'trash_screen.dart';
 import 'editor_screen.dart';
 import 'insights_screen.dart';
+import 'pin_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -59,6 +60,31 @@ class SettingsScreen extends StatelessWidget {
                       Icons.brightness_auto_outlined,
                       settings.themeMode == ThemeMode.system,
                       () => settings.setThemeMode(ThemeMode.system)),
+                  _divider(),
+                  _accentPicker(context, settings),
+                ]),
+                const SizedBox(height: 18),
+                _sectionLabel(AppStrings.security),
+                _card([
+                  SwitchListTile(
+                    value: settings.appLockEnabled,
+                    activeThumbColor: AppColors.primaryBlue,
+                    secondary: const Icon(Icons.lock_outline,
+                        color: AppColors.textSecondary),
+                    title: const Text(AppStrings.appLock,
+                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: const Text(AppStrings.appLockSub),
+                    onChanged: (v) => _toggleAppLock(context, settings, v),
+                  ),
+                  if (settings.appLockEnabled) ...[
+                    _divider(),
+                    _actionTile(
+                      Icons.password_rounded,
+                      AppStrings.changeAppPin,
+                      '••••',
+                      () => _changeAppPin(context, settings),
+                    ),
+                  ],
                 ]),
                 const SizedBox(height: 18),
                 _sectionLabel(AppStrings.editor),
@@ -270,6 +296,77 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  /// صف اختيار لون التطبيق (لون اللهجة).
+  Widget _accentPicker(BuildContext context, SettingsService settings) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.palette_outlined,
+                  color: AppColors.textSecondary),
+              const SizedBox(width: 12),
+              const Text(AppStrings.accentColor,
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Padding(
+            padding: EdgeInsets.only(right: 36),
+            child: Text(AppStrings.accentColorSub,
+                style:
+                    TextStyle(color: AppColors.textMuted, fontSize: 12.5)),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 14,
+            runSpacing: 12,
+            children: List.generate(
+              SettingsService.accentPalette.length,
+              (i) {
+                final color = SettingsService.accentPalette[i];
+                final selected = settings.accentIndex == i;
+                return GestureDetector(
+                  onTap: () {
+                    settings.setAccentIndex(i);
+                    AppSnack.show(context, AppStrings.accentSaved);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: selected ? Colors.white : Colors.transparent,
+                        width: 3,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: color.withValues(
+                              alpha: selected ? 0.5 : 0.25),
+                          blurRadius: selected ? 10 : 4,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: selected
+                        ? const Icon(Icons.check,
+                            color: Colors.white, size: 20)
+                        : null,
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _sectionLabel(String text) => Padding(
         padding: const EdgeInsets.only(left: 4, bottom: 8),
         child: Text(
@@ -353,6 +450,69 @@ class SettingsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  // ---- قفل التطبيق -------------------------------------------------------
+
+  Future<void> _toggleAppLock(
+      BuildContext context, SettingsService settings, bool enable) async {
+    if (enable) {
+      final pin = await Navigator.push<String>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const PinScreen(mode: PinMode.setup),
+        ),
+      );
+      if (pin != null && pin.isNotEmpty) {
+        await settings.setAppLockPin(pin);
+        if (context.mounted) {
+          AppSnack.show(context, AppStrings.appLockEnabled);
+        }
+      }
+    } else {
+      // التحقق من الرمز قبل الإيقاف.
+      final ok = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PinScreen(
+            mode: PinMode.verify,
+            expectedPin: settings.appLockPin,
+          ),
+        ),
+      );
+      if (ok == true) {
+        await settings.disableAppLock();
+        if (context.mounted) {
+          AppSnack.show(context, AppStrings.appLockDisabled);
+        }
+      }
+    }
+  }
+
+  Future<void> _changeAppPin(
+      BuildContext context, SettingsService settings) async {
+    final ok = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PinScreen(
+          mode: PinMode.verify,
+          expectedPin: settings.appLockPin,
+        ),
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    final pin = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PinScreen(mode: PinMode.setup),
+      ),
+    );
+    if (pin != null && pin.isNotEmpty) {
+      await settings.setAppLockPin(pin);
+      if (context.mounted) {
+        AppSnack.show(context, AppStrings.appLockEnabled);
+      }
+    }
   }
 
   void _editDailyGoal(BuildContext context, SettingsService settings) {

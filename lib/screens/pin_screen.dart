@@ -17,11 +17,19 @@ class PinScreen extends StatefulWidget {
   /// مطلوب في وضع التحقق فقط: الرمز المخزّن الذي نقارن به.
   final String? expectedPin;
 
+  /// إذا كانت false يختفي زر الرجوع (يُستخدم لقفل التطبيق عند الفتح).
+  final bool canCancel;
+
+  /// عنوان مخصص يُعرض بدل النص الافتراضي (اختياري).
+  final String? customTitle;
+
   const PinScreen({
     super.key,
     required this.mode,
     this.docTitle = '',
     this.expectedPin,
+    this.canCancel = true,
+    this.customTitle,
   });
 
   @override
@@ -88,28 +96,32 @@ class _PinScreenState extends State<PinScreen> {
   }
 
   String get _titleText {
+    if (widget.customTitle != null && !_confirming) return widget.customTitle!;
     if (widget.mode == PinMode.verify) return AppStrings.enterPinToOpen;
     return _confirming ? AppStrings.confirmPin : AppStrings.setPin;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back_ios_new),
-                  ),
-                ],
+    return PopScope(
+      canPop: widget.canCancel,
+      child: Scaffold(
+        backgroundColor: AppColors.scaffoldBg,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                child: Row(
+                  children: [
+                    if (widget.canCancel)
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back_ios_new),
+                      ),
+                  ],
+                ),
               ),
-            ),
             const SizedBox(height: 8),
             Container(
               width: 78,
@@ -159,10 +171,11 @@ class _PinScreenState extends State<PinScreen> {
                     )
                   : null,
             ),
-            const Spacer(),
-            _keypad(),
-            const SizedBox(height: 24),
-          ],
+              const Spacer(),
+              _keypad(),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );

@@ -50,14 +50,14 @@ class AppColors {
 }
 
 class AppTheme {
-  static ThemeData light() {
+  static ThemeData light({Color accent = AppColors.primaryBlue}) {
     final base = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       scaffoldBackgroundColor: AppColors.scaffoldBg,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.gradientMid,
-        primary: AppColors.primaryBlue,
+        seedColor: accent,
+        primary: accent,
         brightness: Brightness.light,
       ),
     );
@@ -86,14 +86,14 @@ class AppTheme {
     );
   }
 
-  static ThemeData dark() {
+  static ThemeData dark({Color accent = AppColors.primaryBlue}) {
     final base = ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       scaffoldBackgroundColor: const Color(0xFF11151C),
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.gradientMid,
-        primary: AppColors.primaryBlue,
+        seedColor: accent,
+        primary: accent,
         brightness: Brightness.dark,
       ),
     );

@@ -61,8 +61,8 @@ class WordMasterApp extends StatelessWidget {
       title: AppStrings.appName,
       debugShowCheckedModeBanner: false,
       themeMode: settings.themeMode,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
+      theme: AppTheme.light(accent: settings.accentColor),
+      darkTheme: AppTheme.dark(accent: settings.accentColor),
       locale: const Locale('ar'),
       localizationsDelegates: const [
         FlutterQuillLocalizations.delegate,

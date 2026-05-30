@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../core/app_theme.dart';
 import '../core/strings.dart';
+import '../services/settings_service.dart';
+import 'pin_screen.dart';
 import 'root_shell.dart';
 
 /// شاشة بداية أنيقة مع شعار متحرك وانتقال سلس إلى التطبيق.
@@ -29,18 +32,43 @@ class _SplashScreenState extends State<SplashScreen>
     _fade = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _controller.forward();
 
-    Future.delayed(const Duration(milliseconds: 2000), () {
-      if (!mounted) return;
-      Navigator.pushReplacement(
+    Future.delayed(const Duration(milliseconds: 2000), _goNext);
+  }
+
+  Future<void> _goNext() async {
+    if (!mounted) return;
+    final settings = context.read<SettingsService>();
+
+    // إذا كان قفل التطبيق مفعّلاً، اطلب الرمز قبل الدخول.
+    if (settings.appLockEnabled) {
+      final ok = await Navigator.push<bool>(
         context,
-        PageRouteBuilder(
-          transitionDuration: const Duration(milliseconds: 600),
-          pageBuilder: (_, __, ___) => const RootShell(),
-          transitionsBuilder: (_, anim, __, child) =>
-              FadeTransition(opacity: anim, child: child),
+        MaterialPageRoute(
+          builder: (_) => PinScreen(
+            mode: PinMode.verify,
+            expectedPin: settings.appLockPin,
+            canCancel: false,
+            customTitle: AppStrings.unlockApp,
+          ),
         ),
       );
-    });
+      if (ok != true) {
+        // لم يتم فتح القفل: أعد المحاولة.
+        if (mounted) _goNext();
+        return;
+      }
+    }
+
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 600),
+        pageBuilder: (_, __, ___) => const RootShell(),
+        transitionsBuilder: (_, anim, __, child) =>
+            FadeTransition(opacity: anim, child: child),
+      ),
+    );
   }
 
   @override

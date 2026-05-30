@@ -50,11 +50,17 @@ class InsightsScreen extends StatelessWidget {
                 : ListView(
                     padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
                     children: [
+                      _productivityBanner(service, settings),
+                      const SizedBox(height: 22),
                       _overviewGrid(service, settings),
                       const SizedBox(height: 22),
                       _sectionTitle(AppStrings.weeklyActivity),
                       const SizedBox(height: 14),
                       _activityCard(activity, labels, maxVal.toInt()),
+                      const SizedBox(height: 22),
+                      _sectionTitle(AppStrings.monthlyActivity),
+                      const SizedBox(height: 14),
+                      _monthlyHeatmap(service),
                       const SizedBox(height: 22),
                       _sectionTitle(AppStrings.docsByFolder),
                       const SizedBox(height: 14),
@@ -93,6 +99,147 @@ class InsightsScreen extends StatelessWidget {
           ],
         ),
       );
+
+  /// لافتة مؤشر الإنتاجية: نسبة محسوبة من السلسلة، إنجاز الهدف، والمتوسط.
+  Widget _productivityBanner(
+      DocumentService service, SettingsService settings) {
+    final last30 = service.lastDaysActivity(30);
+    final activeDays = last30.where((v) => v > 0).length;
+    final avg = last30.isEmpty
+        ? 0
+        : (last30.fold<int>(0, (s, v) => s + v) / 30).round();
+    final goalRatio = settings.dailyGoal == 0
+        ? 0.0
+        : (avg / settings.dailyGoal).clamp(0.0, 1.0);
+    final consistency = activeDays / 30.0;
+    final streakBoost = (service.writeStreak / 14.0).clamp(0.0, 1.0);
+    final score =
+        ((goalRatio * 0.4 + consistency * 0.4 + streakBoost * 0.2) * 100)
+            .round()
+            .clamp(0, 100);
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: AppColors.brandGradient,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.gradientMid.withValues(alpha: 0.3),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 76,
+            height: 76,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: score / 100),
+                  duration: const Duration(milliseconds: 900),
+                  curve: Curves.easeOutCubic,
+                  builder: (_, val, __) => SizedBox(
+                    width: 76,
+                    height: 76,
+                    child: CircularProgressIndicator(
+                      value: val,
+                      strokeWidth: 7,
+                      backgroundColor: Colors.white24,
+                      valueColor:
+                          const AlwaysStoppedAnimation(Colors.white),
+                    ),
+                  ),
+                ),
+                Text('$score',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 18),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(AppStrings.productivityScore,
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800)),
+                const SizedBox(height: 6),
+                Text(
+                  '${AppStrings.avgWordsDay}: $avg ${AppStrings.wordsUnit}',
+                  style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.92),
+                      fontSize: 12.5),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$activeDays / 30 ${AppStrings.day}',
+                  style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.92),
+                      fontSize: 12.5),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// خريطة حرارية لآخر 30 يوماً (شبكة مربعات بتدرّج حسب النشاط).
+  Widget _monthlyHeatmap(DocumentService service) {
+    final data = service.lastDaysActivity(30);
+    final maxVal = data.isEmpty
+        ? 1
+        : data.reduce((a, b) => a > b ? a : b).clamp(1, 1 << 30);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Wrap(
+        spacing: 7,
+        runSpacing: 7,
+        children: List.generate(data.length, (i) {
+          final v = data[i];
+          final ratio = maxVal == 0 ? 0.0 : v / maxVal;
+          final color = v == 0
+              ? AppColors.activeChipBg
+              : Color.lerp(
+                  AppColors.gradientEnd.withValues(alpha: 0.35),
+                  AppColors.gradientStart,
+                  ratio)!;
+          return TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.4, end: 1.0),
+            duration: Duration(milliseconds: 300 + i * 15),
+            curve: Curves.easeOut,
+            builder: (_, scale, __) => Transform.scale(
+              scale: scale,
+              child: Container(
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(7),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
 
   Widget _overviewGrid(DocumentService service, SettingsService settings) {
     final stats = [

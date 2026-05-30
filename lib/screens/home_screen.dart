@@ -12,6 +12,7 @@ import '../widgets/document_card.dart';
 import 'editor_screen.dart';
 import 'doc_actions.dart';
 import 'insights_screen.dart';
+import 'tags_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final ValueChanged<int> onOpenTab;
@@ -31,6 +32,13 @@ class HomeScreen extends StatelessWidget {
           GradientHeader(
             title: AppStrings.homeTitle,
             actions: [
+              _circleBtn(Icons.local_offer_outlined, () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const TagsScreen()),
+                );
+              }),
+              const SizedBox(width: 8),
               _circleBtn(Icons.insights_rounded, () {
                 Navigator.push(
                   context,

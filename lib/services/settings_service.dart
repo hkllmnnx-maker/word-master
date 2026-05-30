@@ -11,6 +11,20 @@ class SettingsService extends ChangeNotifier {
   static const _kAutosave = 'autosave';
   static const _kUserName = 'user_name';
   static const _kDailyGoal = 'daily_goal';
+  static const _kAccentColor = 'accent_color';
+  static const _kAppLockPin = 'app_lock_pin';
+
+  /// The palette of accent colors the user can choose from.
+  static const List<Color> accentPalette = [
+    Color(0xFF2E7CF6), // blue (default)
+    Color(0xFF7C4DFF), // purple
+    Color(0xFFD81B8C), // magenta
+    Color(0xFF00B0FF), // cyan
+    Color(0xFF22C55E), // green
+    Color(0xFFEF8A1B), // orange
+    Color(0xFFEF4444), // red
+    Color(0xFF0EA5A4), // teal
+  ];
 
   late SharedPreferences _prefs;
 
@@ -19,12 +33,20 @@ class SettingsService extends ChangeNotifier {
   bool _autosave = true;
   String _userName = AppStrings.defaultUserName;
   int _dailyGoal = 300;
+  int _accentIndex = 0;
+  String _appLockPin = '';
 
   ThemeMode get themeMode => _themeMode;
   double get editorFontScale => _editorFontScale;
   bool get autosave => _autosave;
   String get userName => _userName;
   int get dailyGoal => _dailyGoal;
+  int get accentIndex => _accentIndex;
+  Color get accentColor => accentPalette[_accentIndex];
+
+  /// Whether the whole app is protected by a launch PIN.
+  bool get appLockEnabled => _appLockPin.isNotEmpty;
+  String get appLockPin => _appLockPin;
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
@@ -38,8 +60,31 @@ class SettingsService extends ChangeNotifier {
     _autosave = _prefs.getBool(_kAutosave) ?? true;
     _userName = _prefs.getString(_kUserName) ?? AppStrings.defaultUserName;
     _dailyGoal = _prefs.getInt(_kDailyGoal) ?? 300;
+    _accentIndex =
+        (_prefs.getInt(_kAccentColor) ?? 0).clamp(0, accentPalette.length - 1);
+    _appLockPin = _prefs.getString(_kAppLockPin) ?? '';
     notifyListeners();
   }
+
+  Future<void> setAccentIndex(int index) async {
+    _accentIndex = index.clamp(0, accentPalette.length - 1);
+    await _prefs.setInt(_kAccentColor, _accentIndex);
+    notifyListeners();
+  }
+
+  Future<void> setAppLockPin(String pin) async {
+    _appLockPin = pin;
+    await _prefs.setString(_kAppLockPin, pin);
+    notifyListeners();
+  }
+
+  Future<void> disableAppLock() async {
+    _appLockPin = '';
+    await _prefs.remove(_kAppLockPin);
+    notifyListeners();
+  }
+
+  bool verifyAppLockPin(String pin) => _appLockPin == pin;
 
   Future<void> setThemeMode(ThemeMode mode) async {
     _themeMode = mode;
